@@ -1,6 +1,7 @@
-package lexer
+package lexer_test
 
 import (
+	"monkey/lexer"
 	"monkey/token"
 	"testing"
 )
@@ -107,7 +108,7 @@ if (5 < 10) {
 		{token.EOF, ""},
 	}
 
-	l := New(input)
+	l := lexer.New(input)
 
 	for i, tt := range tests {
 		tok := l.NextToken()
