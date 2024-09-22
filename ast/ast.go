@@ -37,6 +37,12 @@ type Identifier struct {
 	Value string
 }
 
+// ReturnStatement contains a keyword for return and an expression.
+type ReturnStatement struct {
+	Token       token.Token // the 'return' expression
+	ReturnValue Expression
+}
+
 // TokenLiteral returns the literal representation of the first token within the program's statements.
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
@@ -45,16 +51,23 @@ func (p *Program) TokenLiteral() string {
 	return ""
 }
 
-func (ls *LetStatement) statementNode() {}
-
 // TokenLiteral returns the Literal from the LetStatement being called on.
 func (ls *LetStatement) TokenLiteral() string {
 	return ls.Token.Literal
 }
 
-func (i *Identifier) expressionNode() {}
+func (ls *LetStatement) statementNode() {}
 
 // TokenLiteral returns the Literal from the Identifier being called on.
 func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
 }
+
+func (i *Identifier) expressionNode() {}
+
+// TokenLiteral returns the Literal from the ReturnStatement being called on.
+func (rs *ReturnStatement) TokenLiteral() string {
+	return rs.Token.Literal
+}
+
+func (rs *ReturnStatement) statementNode() {}
