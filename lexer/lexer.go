@@ -1,9 +1,9 @@
-// Package lexer transforms source code to tokens
+// Package lexer transforms source code to tokens.
 package lexer
 
 import "monkey/token"
 
-// Lexer represents the data to transform
+// Lexer represents the data to transform.
 type Lexer struct {
 	input        string
 	position     int  // current position in input (points to current char)
@@ -11,14 +11,14 @@ type Lexer struct {
 	ch           byte // current char under examination
 }
 
-// New returns a new Lexer
+// New returns a new Lexer.
 func New(input string) *Lexer {
 	l := &Lexer{input: input}
 	l.readChar()
 	return l
 }
 
-// NextToken looks at the current character under examination and returns a token based on the character
+// NextToken looks at the current character under examination and returns a token based on the character.
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 

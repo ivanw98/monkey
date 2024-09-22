@@ -61,7 +61,7 @@ var keywords = map[string]TokenType{
 	"return": RETURN,
 }
 
-// LookupIdent checks the keywords table to see whether a given identifier is a keyword
+// LookupIdent checks the keywords table to see whether a given identifier is a keyword.
 func LookupIdent(ident string) TokenType {
 	if tok, ok := keywords[ident]; ok {
 		return tok
