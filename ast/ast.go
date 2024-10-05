@@ -51,6 +51,12 @@ type ExpressionStatement struct {
 	Expression Expression
 }
 
+// IntegerLiteral are expressions. The Value they produce is the integer itself.
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
 // String creates a buffer and writes the return value of each statement's String() method to it.
 func (p *Program) String() string {
 	var out bytes.Buffer
@@ -140,3 +146,13 @@ func (es *ExpressionStatement) String() string {
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 
 func (es *ExpressionStatement) statementNode() {}
+
+// String allows for printing of AST nodes.
+func (i *IntegerLiteral) String() string {
+	return i.Token.Literal
+}
+
+// TokenLiteral returns the Literal from the ReturnStatement being called on.
+func (i *IntegerLiteral) TokenLiteral() string { return i.Token.Literal }
+
+func (i *IntegerLiteral) expressionNode() {}
