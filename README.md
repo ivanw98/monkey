@@ -1,2 +1,2 @@
 # monkey
-Go compiler for monkey language
+A Go interpreter and compiler for monkey language.
