@@ -58,6 +58,14 @@ type PrefixExpression struct {
 	Right    Expression
 }
 
+// InfixExpression represents a prefix operation in an AST.
+type InfixExpression struct {
+	Token    token.Token
+	Left     Expression
+	Right    Expression
+	Operator string
+}
+
 // IntegerLiteral are expressions. The Value they produce is the integer itself.
 type IntegerLiteral struct {
 	Token token.Token
@@ -180,3 +188,21 @@ func (pe *PrefixExpression) String() string {
 func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
 
 func (pe *PrefixExpression) expressionNode() {}
+
+// String allows for printing of AST nodes.
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the InfixExpression being called on.
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+
+func (ie *InfixExpression) expressionNode() {}
