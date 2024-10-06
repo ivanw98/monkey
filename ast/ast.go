@@ -51,6 +51,13 @@ type ExpressionStatement struct {
 	Expression Expression
 }
 
+// PrefixExpression represents a prefix operation in an AST.
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
 // IntegerLiteral are expressions. The Value they produce is the integer itself.
 type IntegerLiteral struct {
 	Token token.Token
@@ -142,7 +149,7 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
-// TokenLiteral returns the Literal from the ReturnStatement being called on.
+// TokenLiteral returns the Literal from the ExpressionStatement being called on.
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 
 func (es *ExpressionStatement) statementNode() {}
@@ -152,7 +159,24 @@ func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
 }
 
-// TokenLiteral returns the Literal from the ReturnStatement being called on.
+// TokenLiteral returns the Literal from the IntegerLiteral being called on.
 func (i *IntegerLiteral) TokenLiteral() string { return i.Token.Literal }
 
 func (i *IntegerLiteral) expressionNode() {}
+
+// String allows for printing of AST nodes.
+func (pe *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the PrefixExpression being called on.
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+
+func (pe *PrefixExpression) expressionNode() {}
