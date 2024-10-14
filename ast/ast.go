@@ -72,6 +72,12 @@ type IntegerLiteral struct {
 	Value int64
 }
 
+// Boolean represents boolean literals.
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
 // String creates a buffer and writes the return value of each statement's String() method to it.
 func (p *Program) String() string {
 	var out bytes.Buffer
@@ -206,3 +212,15 @@ func (ie *InfixExpression) String() string {
 func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
 
 func (ie *InfixExpression) expressionNode() {}
+
+// String allows for printing of AST nodes.
+func (b *Boolean) String() string {
+	return b.Token.Literal
+}
+
+// TokenLiteral returns the Literal from the InfixExpression being called on.
+func (b *Boolean) TokenLiteral() string {
+	return b.Token.Literal
+}
+
+func (b *Boolean) expressionNode() {}
