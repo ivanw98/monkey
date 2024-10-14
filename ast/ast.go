@@ -4,6 +4,7 @@ package ast
 import (
 	"bytes"
 	"monkey/token"
+	"strings"
 )
 
 type Node interface {
@@ -90,6 +91,13 @@ type IfExpression struct {
 type BlockStatement struct {
 	Token      token.Token
 	Statements []Statement
+}
+
+// FunctionLiteral represents a function definition with parameters and a body.
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       *BlockStatement
 }
 
 // String creates a buffer and writes the return value of each statement's String() method to it.
@@ -284,3 +292,28 @@ func (bs *BlockStatement) TokenLiteral() string {
 func (bs *BlockStatement) statementNode() {
 
 }
+
+// String allows for printing of AST nodes.
+func (fl *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	var params []string
+	for _, p := range fl.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString(fl.TokenLiteral())
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(")")
+	out.WriteString(fl.Body.String())
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the FunctionLiteral being called on.
+func (fl *FunctionLiteral) TokenLiteral() string {
+	return fl.Token.Literal
+}
+
+func (fl *FunctionLiteral) expressionNode() {}
