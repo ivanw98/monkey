@@ -78,6 +78,20 @@ type Boolean struct {
 	Value bool
 }
 
+// IfExpression represents an if-else conditional expression in the abstract syntax tree.
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+// BlockStatement represents a block of statements enclosed within braces.
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
 // String creates a buffer and writes the return value of each statement's String() method to it.
 func (p *Program) String() string {
 	var out bytes.Buffer
@@ -218,9 +232,55 @@ func (b *Boolean) String() string {
 	return b.Token.Literal
 }
 
-// TokenLiteral returns the Literal from the InfixExpression being called on.
+// TokenLiteral returns the Literal from the Boolean being called on.
 func (b *Boolean) TokenLiteral() string {
 	return b.Token.Literal
 }
 
 func (b *Boolean) expressionNode() {}
+
+// String allows for printing of AST nodes.
+func (ie *IfExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("if")
+	out.WriteString(ie.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(ie.Condition.String())
+
+	if ie.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(ie.Alternative.String())
+	}
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the IfExpression being called on.
+func (ie *IfExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+
+func (ie *IfExpression) expressionNode() {
+
+}
+
+// String allows for printing of AST nodes.
+func (bs *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	for _, s := range bs.Statements {
+		out.WriteString(s.String())
+	}
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the BlockStatement being called on.
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+
+func (bs *BlockStatement) statementNode() {
+
+}
