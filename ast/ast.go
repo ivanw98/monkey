@@ -34,13 +34,13 @@ type LetStatement struct {
 	Value Expression
 }
 
-// Identifier represents the identifier of the binding.
+// Identifier represents the identifier of the binding, it is a type of Expression.
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
 }
 
-// ReturnStatement contains a keyword for return and an expression.
+// ReturnStatement contains a keyword for return and an Expression.
 type ReturnStatement struct {
 	Token       token.Token // the 'return' expression
 	ReturnValue Expression
@@ -98,6 +98,14 @@ type FunctionLiteral struct {
 	Token      token.Token
 	Parameters []*Identifier
 	Body       *BlockStatement
+}
+
+// CallExpression consists of an expression that results in a function when evaluated and a list of expressions that
+// are the args to the function call.
+type CallExpression struct {
+	Token    token.Token // The '(' token
+	Function Expression  // Identifier or FunctionLiteral
+	Args     []Expression
 }
 
 // String creates a buffer and writes the return value of each statement's String() method to it.
@@ -317,3 +325,28 @@ func (fl *FunctionLiteral) TokenLiteral() string {
 }
 
 func (fl *FunctionLiteral) expressionNode() {}
+
+// String allows for printing of AST nodes.
+func (ce *CallExpression) String() string {
+	var out bytes.Buffer
+
+	var args []string
+	for _, a := range ce.Args {
+		args = append(args, a.String())
+	}
+
+	out.WriteString(ce.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
+	return out.String()
+}
+
+func (ce *CallExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+
+func (ce *CallExpression) expressionNode() {
+
+}
