@@ -5,7 +5,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"monkey/evaluator"
 	"monkey/lexer"
+	"monkey/object"
 	"monkey/parser"
 )
 
@@ -14,6 +16,7 @@ const PROMPT = ">>"
 // Start reads from the input source.
 func Start(in io.Reader, out io.Writer) error {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for {
 		_, err := fmt.Fprintf(out, PROMPT)
@@ -35,14 +38,16 @@ func Start(in io.Reader, out io.Writer) error {
 			continue
 		}
 
-		_, err = io.WriteString(out, program.String())
-		if err != nil {
-			return err
-		}
-
-		_, err = io.WriteString(out, "\n")
-		if err != nil {
-			return err
+		evaluated := evaluator.Eval(program, env)
+		if evaluated != nil {
+			_, err = io.WriteString(out, evaluated.Inspect())
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(out, "\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
