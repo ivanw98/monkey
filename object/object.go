@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// ObjectType defines the type for various objects in the system.
 type ObjectType string
 
 const (
@@ -19,61 +20,76 @@ type Object interface {
 	Inspect() string
 }
 
+// Integer represents an integer object with a 64-bit Value field.
 type Integer struct {
 	Value int64
 }
 
+// Boolean represents a boolean value with true or false states.
 type Boolean struct {
 	Value bool
 }
 
+// ReturnValue represents the return value object in the system, wrapping an Object that contains the actual returned value.
 type ReturnValue struct {
 	Value Object
 }
 
+// Error represents an error object in the system with a message.
 type Error struct {
 	Message string
 }
 
+// Null represents the absence of a value.
 type Null struct {
 }
 
+// Inspect returns a string representation of the Integer's value.
 func (i *Integer) Inspect() string {
 	return fmt.Sprintf("%d", i.Value)
 }
 
+// Type returns the object type.
 func (i *Integer) Type() ObjectType {
 	return INTEGER_OBJ
 }
 
+// Inspect returns the string representation of the Boolean value.
 func (b *Boolean) Inspect() string {
 	return fmt.Sprintf("%t", b.Value)
 }
 
+// Type returns the object type.
 func (b *Boolean) Type() ObjectType {
 	return BOOLEAN_OBJ
 }
 
+// Inspect returns the string representation of the returned value by invoking the Inspect method on the wrapped Object.
 func (rv *ReturnValue) Inspect() string {
 	return rv.Value.Inspect()
 }
 
+// Type returns the object type.
 func (rv *ReturnValue) Type() ObjectType {
 	return RETURN_VALUE_OBJ
 }
 
+// Inspect returns the error message formatted with a prefix "ERROR: ".
 func (e *Error) Inspect() string {
 	return "ERROR: " + e.Message
 }
 
+// Type returns the object type.
 func (e *Error) Type() ObjectType {
 	return ERROR_OBJ
 }
 
+// Inspect returns a string representation of a Null object.
 func (n *Null) Inspect() string {
 	return "null"
 }
 
+// Type returns the object type.
 func (n *Null) Type() ObjectType {
 	return NULL_OBJ
 }

@@ -95,7 +95,7 @@ type BlockStatement struct {
 
 // FunctionLiteral represents a function definition with parameters and a body.
 type FunctionLiteral struct {
-	Token      token.Token
+	Token      token.Token // the 'fn' token
 	Parameters []*Identifier
 	Body       *BlockStatement
 }
@@ -343,6 +343,7 @@ func (ce *CallExpression) String() string {
 	return out.String()
 }
 
+// TokenLiteral returns the Literal from the CallExpression being called on.
 func (ce *CallExpression) TokenLiteral() string {
 	return ce.Token.Literal
 }

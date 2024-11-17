@@ -12,6 +12,8 @@ var (
 	NULL  = &object.Null{}
 )
 
+// Eval evaluates a given AST node within a specified environment and returns the resulting object.
+// It handles various node types including programs, expressions, literals, statements, and conditionals.
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
