@@ -1,7 +1,10 @@
 package object
 
 import (
+	"bytes"
 	"fmt"
+	"monkey/ast"
+	"strings"
 )
 
 // ObjectType defines the type for various objects in the system.
@@ -13,6 +16,7 @@ const (
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
+	FUNCTION_OBJ     = "FUNCTION"
 )
 
 type Object interface {
@@ -33,6 +37,13 @@ type Boolean struct {
 // ReturnValue represents the return value object in the system, wrapping an Object that contains the actual returned value.
 type ReturnValue struct {
 	Value Object
+}
+
+// Function represents a function as an object.
+type Function struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Environment
 }
 
 // Error represents an error object in the system with a message.
@@ -92,4 +103,28 @@ func (n *Null) Inspect() string {
 // Type returns the object type.
 func (n *Null) Type() ObjectType {
 	return NULL_OBJ
+}
+
+// Inspect returns a string representation of a Function object.
+func (f *Function) Inspect() string {
+	var out bytes.Buffer
+	var params []string
+
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(f.Body.String())
+	out.WriteString("\n}")
+
+	return out.String()
+}
+
+// Type returns the object type.
+func (f *Function) Type() ObjectType {
+	return FUNCTION_OBJ
 }
