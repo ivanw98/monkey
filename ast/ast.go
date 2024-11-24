@@ -93,6 +93,12 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
+// StringLiteral represents a string literal in the code. Value is the string itself.
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
 // FunctionLiteral represents a function definition with parameters and a body.
 type FunctionLiteral struct {
 	Token      token.Token // the 'fn' token
@@ -349,5 +355,19 @@ func (ce *CallExpression) TokenLiteral() string {
 }
 
 func (ce *CallExpression) expressionNode() {
+
+}
+
+// String allows for printing of AST nodes.
+func (sl *StringLiteral) String() string {
+	return sl.Token.Literal
+}
+
+// TokenLiteral returns the Literal from the StringLiteral being called on.
+func (sl *StringLiteral) TokenLiteral() string {
+	return sl.Token.Literal
+}
+
+func (sl *StringLiteral) expressionNode() {
 
 }
