@@ -17,6 +17,7 @@ const (
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
+	STRING_OBJ       = "STRING"
 )
 
 type Object interface {
@@ -32,6 +33,11 @@ type Integer struct {
 // Boolean represents a boolean value with true or false states.
 type Boolean struct {
 	Value bool
+}
+
+// String represents a string value for Monkey.
+type String struct {
+	Value string
 }
 
 // ReturnValue represents the return value object in the system, wrapping an Object that contains the actual returned value.
@@ -73,6 +79,16 @@ func (b *Boolean) Inspect() string {
 // Type returns the object type.
 func (b *Boolean) Type() ObjectType {
 	return BOOLEAN_OBJ
+}
+
+// Inspect returns the string representation of the String value.
+func (s *String) Inspect() string {
+	return s.Value
+}
+
+// Type returns the object type.
+func (s *String) Type() ObjectType {
+	return STRING_OBJ
 }
 
 // Inspect returns the string representation of the returned value by invoking the Inspect method on the wrapped Object.
