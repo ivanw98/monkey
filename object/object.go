@@ -18,7 +18,11 @@ const (
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	STRING_OBJ       = "STRING"
+	BUILTIN_OBJ      = "BUILTIN"
 )
+
+// BuiltinFunction represents a function type that accepts a variable number of Object arguments and returns an Object.
+type BuiltinFunction func(args ...Object) Object
 
 type Object interface {
 	Type() ObjectType
@@ -50,6 +54,10 @@ type Function struct {
 	Parameters []*ast.Identifier
 	Body       *ast.BlockStatement
 	Env        *Environment
+}
+
+type Builtin struct {
+	Fn BuiltinFunction
 }
 
 // Error represents an error object in the system with a message.
@@ -143,4 +151,14 @@ func (f *Function) Inspect() string {
 // Type returns the object type.
 func (f *Function) Type() ObjectType {
 	return FUNCTION_OBJ
+}
+
+// Inspect returns a string representation of a Builtin object.
+func (b *Builtin) Inspect() string {
+	return "builtin function"
+}
+
+// Type returns the BUILTIN_OBJ
+func (b *Builtin) Type() ObjectType {
+	return BUILTIN_OBJ
 }
