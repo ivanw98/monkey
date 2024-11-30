@@ -119,6 +119,13 @@ type ArrayLiteral struct {
 	Elements []Expression
 }
 
+// IndexExpression represents an indexed access of an element, like accessing an array element.
+type IndexExpression struct {
+	Token token.Token // token representing the '['
+	Left  Expression
+	Index Expression
+}
+
 // String creates a buffer and writes the return value of each statement's String() method to it.
 func (p *Program) String() string {
 	var out bytes.Buffer
@@ -400,5 +407,27 @@ func (al *ArrayLiteral) TokenLiteral() string {
 }
 
 func (al *ArrayLiteral) expressionNode() {
+
+}
+
+// String allows for printing of AST nodes.
+func (ie *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString("[")
+	out.WriteString(ie.Index.String())
+	out.WriteString("])")
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the StringLiteral being called on.
+func (ie *IndexExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+
+func (ie *IndexExpression) expressionNode() {
 
 }
