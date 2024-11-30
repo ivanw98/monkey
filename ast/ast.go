@@ -106,12 +106,17 @@ type FunctionLiteral struct {
 	Body       *BlockStatement
 }
 
-// CallExpression consists of an expression that results in a function when evaluated and a list of expressions that
-// are the args to the function call.
+// CallExpression consists of an expression that results in a function when evaluated and a list of expressions that are the args to the function call.
 type CallExpression struct {
 	Token    token.Token // The '(' token
 	Function Expression  // Identifier or FunctionLiteral
 	Args     []Expression
+}
+
+// ArrayLiteral represents an array literal in the syntax tree. The list of expressions is for each element in the array.
+type ArrayLiteral struct {
+	Token    token.Token // token representing the '['
+	Elements []Expression
 }
 
 // String creates a buffer and writes the return value of each statement's String() method to it.
@@ -369,5 +374,31 @@ func (sl *StringLiteral) TokenLiteral() string {
 }
 
 func (sl *StringLiteral) expressionNode() {
+
+}
+
+// String allows for printing of AST nodes.
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	var elements []string
+
+	for _, element := range al.Elements {
+		elements = append(elements, element.String())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+// TokenLiteral returns the Literal from the StringLiteral being called on.
+func (al *ArrayLiteral) TokenLiteral() string {
+	return al.Token.Literal
+}
+
+func (al *ArrayLiteral) expressionNode() {
 
 }
