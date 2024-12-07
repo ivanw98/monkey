@@ -19,6 +19,7 @@ const (
 	FUNCTION_OBJ     = "FUNCTION"
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
+	ARRAY_OBJ        = "ARRAY"
 )
 
 // BuiltinFunction represents a function type that accepts a variable number of Object arguments and returns an Object.
@@ -56,8 +57,14 @@ type Function struct {
 	Env        *Environment
 }
 
+// Builtin represents a structure that holds a BuiltinFunction which defines the behavior of the built-in functionality.
 type Builtin struct {
 	Fn BuiltinFunction
+}
+
+// Array represents a collection of elements implementing the Object interface.
+type Array struct {
+	Elements []Object
 }
 
 // Error represents an error object in the system with a message.
@@ -161,4 +168,26 @@ func (b *Builtin) Inspect() string {
 // Type returns the BUILTIN_OBJ
 func (b *Builtin) Type() ObjectType {
 	return BUILTIN_OBJ
+}
+
+// Inspect returns a string representation of a Array object.
+func (a *Array) Inspect() string {
+	var out bytes.Buffer
+
+	var elements []string
+
+	for _, e := range a.Elements {
+		elements = append(elements, e.Inspect())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+// Type returns the BUILTIN_OBJ
+func (a *Array) Type() ObjectType {
+	return ARRAY_OBJ
 }
