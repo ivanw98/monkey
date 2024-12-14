@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"monkey/ast"
 	"strings"
 )
@@ -20,6 +21,7 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 )
 
 // BuiltinFunction represents a function type that accepts a variable number of Object arguments and returns an Object.
@@ -28,6 +30,10 @@ type BuiltinFunction func(args ...Object) Object
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+}
+
+type Hashable interface {
+	HashKey() HashKey
 }
 
 // Integer represents an integer object with a 64-bit Value field.
@@ -67,6 +73,23 @@ type Array struct {
 	Elements []Object
 }
 
+// HashKey represents a unique identifier for hashable objects, combining their type and hashed value.
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+// HashPair represents a key-value pair in a hash data structure; Key and Value implement Object interface.
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+// Hash is a structure representing a collection of key-value pairs, where keys are defined by their unique HashKey.
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
 // Error represents an error object in the system with a message.
 type Error struct {
 	Message string
@@ -86,6 +109,11 @@ func (i *Integer) Type() ObjectType {
 	return INTEGER_OBJ
 }
 
+// HashKey generates hashes for objects that we can easily compare and use as hash keys in object.Hash
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
 // Inspect returns the string representation of the Boolean value.
 func (b *Boolean) Inspect() string {
 	return fmt.Sprintf("%t", b.Value)
@@ -96,6 +124,16 @@ func (b *Boolean) Type() ObjectType {
 	return BOOLEAN_OBJ
 }
 
+// HashKey generates hashes for objects that we can easily compare and use as hash keys in object.Hash
+func (b *Boolean) HashKey() HashKey {
+	value := 0
+	if b.Value {
+		value = 1
+	}
+
+	return HashKey{Type: b.Type(), Value: uint64(value)}
+}
+
 // Inspect returns the string representation of the String value.
 func (s *String) Inspect() string {
 	return s.Value
@@ -104,6 +142,16 @@ func (s *String) Inspect() string {
 // Type returns the object type.
 func (s *String) Type() ObjectType {
 	return STRING_OBJ
+}
+
+// HashKey generates hashes for objects that we can easily compare and use as hash keys in object.Hash
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	_, err := h.Write([]byte(s.Value))
+	if err != nil {
+		return HashKey{}
+	}
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
 // Inspect returns the string representation of the returned value by invoking the Inspect method on the wrapped Object.
@@ -170,7 +218,7 @@ func (b *Builtin) Type() ObjectType {
 	return BUILTIN_OBJ
 }
 
-// Inspect returns a string representation of a Array object.
+// Inspect returns a string representation of an Array object.
 func (a *Array) Inspect() string {
 	var out bytes.Buffer
 
@@ -190,4 +238,24 @@ func (a *Array) Inspect() string {
 // Type returns the BUILTIN_OBJ
 func (a *Array) Type() ObjectType {
 	return ARRAY_OBJ
+}
+
+// Inspect returns a string representation of a Hash object.
+func (h *Hash) Inspect() string {
+	var out bytes.Buffer
+	var pairs []string
+
+	for _, p := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", p.Key.Inspect(), p.Value.Inspect()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
+
+func (h *Hash) Type() ObjectType {
+	return HASH_OBJ
 }

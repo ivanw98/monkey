@@ -71,6 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 
 	p.registerPrefix(token.IF, p.parseIfExpression)
 
@@ -482,4 +483,37 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	}
 
 	return exp
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hash := &ast.HashLiteral{Token: p.curToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression)
+
+	// While not at the end of the hash...
+	for !p.peekTokenIs(token.RBRACE) {
+		// go to the next token
+		p.nextToken()
+		key := p.parseExpression(LOWEST)
+
+		// if not a colon after key return nil
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+
+		// iterate over colon
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+
+		hash.Pairs[key] = value
+
+		// next token should either be a rbrace or comma
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+	}
+	// once finished, the final token should be a rbrace
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+	return hash
 }
