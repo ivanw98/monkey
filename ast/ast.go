@@ -126,6 +126,12 @@ type IndexExpression struct {
 	Index Expression
 }
 
+// HashLiteral allows any expression as a key, and any expression as a value.
+type HashLiteral struct {
+	Token token.Token // The "{" token
+	Pairs map[Expression]Expression
+}
+
 // String creates a buffer and writes the return value of each statement's String() method to it.
 func (p *Program) String() string {
 	var out bytes.Buffer
@@ -429,5 +435,28 @@ func (ie *IndexExpression) TokenLiteral() string {
 }
 
 func (ie *IndexExpression) expressionNode() {
+
+}
+
+func (hl *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	var pairs []string
+	for key, value := range hl.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
+
+func (hl *HashLiteral) TokenLiteral() string {
+	return hl.Token.Literal
+}
+
+func (hl *HashLiteral) expressionNode() {
 
 }
