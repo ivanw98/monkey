@@ -1,0 +1,130 @@
+package code
+
+import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+)
+
+// Instructions represents a sequence of bytes intended for processing or interpretation.
+//
+// a single Instruction consists of an Opcode and an optional number of operands.
+type Instructions []byte
+
+// Opcode represents a single instruction code in a virtual machine or processing unit.
+type Opcode byte
+
+// Definition helps make Opcode readable and stores the number of bytes each operand takes up.
+type Definition struct {
+	Name          string
+	OperandWidths []int
+}
+
+const (
+	// OpConstant retrieves the constant using the operand as an index and pushes it on to the stack.
+	OpConstant Opcode = iota
+)
+
+var definitions = map[Opcode]*Definition{
+	OpConstant: {"OpConstant", []int{2}},
+}
+
+// String outputs a readable format of Instructions.
+func (ins Instructions) String() string {
+	var out bytes.Buffer
+
+	for i := 0; i < len(ins); {
+		def, err := Lookup(ins[i])
+		if err != nil {
+			fmt.Fprintf(&out, "ERROR: %s\n", err)
+			i++
+			continue
+		}
+
+		operands, read := ReadOperands(def, ins[i+1:])
+		fmt.Fprintf(&out, "%04d %s\n", i, ins.fmtInstruction(def, operands))
+
+		i += 1 + read
+	}
+
+	return out.String()
+}
+
+func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
+	operandCount := len(def.OperandWidths)
+
+	if len(operands) != operandCount {
+		return fmt.Sprintf("ERROR: operand len %d doe not match defined %d\n", len(operands), operandCount)
+	}
+
+	switch operandCount {
+	case 1:
+		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	}
+
+	return fmt.Sprintf("ERROR: unhandled operandCount for %s\n", def.Name)
+}
+
+// Lookup retrieves the Definition associated with the given opcode.
+func Lookup(op byte) (*Definition, error) {
+	def, ok := definitions[Opcode(op)]
+	if !ok {
+		return nil, fmt.Errorf("opcode %d undefined", op)
+	}
+
+	return def, nil
+}
+
+// Make encodes the operands of a single bytecode instruction.
+func Make(op Opcode, operands ...int) []byte {
+	def, ok := definitions[op]
+	if !ok {
+		return []byte{}
+	}
+
+	// find out how long the resulting instruction needs to be.
+	instructionLen := 1
+	for _, w := range def.OperandWidths {
+		instructionLen += w
+	}
+
+	instruction := make([]byte, instructionLen)
+	instruction[0] = byte(op)
+
+	// iterate over operand widths, taking the matching element from operands and place in instruction.
+	offset := 1
+	for i, o := range operands {
+		width := def.OperandWidths[i]
+		switch width {
+		case 2:
+			// endianness is the order in which bytes within a word are addressed in computer memory,
+			// counting only byte significance compared to earliness.
+			// A big-endian system stores the most significant byte of a word at the smallest memory address
+			binary.BigEndian.PutUint16(instruction[offset:], uint16(o))
+		}
+		offset += width
+	}
+
+	return instruction
+}
+
+// ReadOperands decodes the operands of an instruction based on its definition, and also tells us how many bytes were read.
+func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
+	operands := make([]int, len(def.OperandWidths))
+	offset := 0
+
+	for i, width := range def.OperandWidths {
+		switch width {
+		case 2:
+			operands[i] = int(ReadUint16(ins[offset:]))
+		}
+
+		offset += width
+	}
+	return operands, offset
+}
+
+// ReadUint16 reads two bytes from the provided Instructions and returns them as a uint16 in big-endian order.
+func ReadUint16(ins Instructions) uint16 {
+	return binary.BigEndian.Uint16(ins)
+}
