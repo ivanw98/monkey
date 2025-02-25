@@ -1,3 +1,8 @@
+// Package compiler defines the code that allows our compiler to:
+// walk an AST recursively to find Literals
+// evaluate the literals and turn them into objects
+// Add those to the constants field
+// add OpConstant instructions to its internal instructions slice.
 package compiler
 
 import (
@@ -26,8 +31,32 @@ func New() *Compiler {
 	}
 }
 
-// Compile traverses an AST node, generates bytecode instructions, and appends constants to the compiler's state.
+// Compile recursively traverses an AST node, generates bytecode instructions, and appends constants to the compiler's state.
 func (c *Compiler) Compile(node ast.Node) error {
+	switch node := node.(type) {
+	case *ast.Program:
+		for _, s := range node.Statements {
+			err := c.Compile(s)
+			if err != nil {
+				return err
+			}
+		}
+	case *ast.ExpressionStatement:
+		err := c.Compile(node.Expression)
+		if err != nil {
+			return err
+		}
+
+	case *ast.InfixExpression:
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+	case *ast.IntegerLiteral:
+		integer := &object.Integer{Value: node.Value}
+		c.emit(code.OpConstant, c.addConstant(integer))
+	}
+
 	return nil
 }
 
@@ -37,4 +66,28 @@ func (c *Compiler) Bytecode() *Bytecode {
 		Instructions: c.instructions,
 		Constants:    c.constants,
 	}
+}
+
+func (c *Compiler) addConstant(obj object.Object) int {
+	c.constants = append(c.constants, obj)
+
+	// return the index of the object.Object appended to the constants.
+	// This identifier will be used as the operand for the OpConstant instruction
+	// that should cause the VM to load this constant from the constants pool on to the stack.
+	return len(c.constants) - 1
+}
+
+// emit generates an instruction and adds it to the results.
+func (c *Compiler) emit(op code.Opcode, operands ...int) int {
+	ins := code.Make(op, operands...)
+	pos := c.addInstruction(ins)
+
+	// return the starting point of the just-emitted instruction
+	return pos
+}
+
+func (c *Compiler) addInstruction(ins []byte) int {
+	posNewInstruction := len(c.instructions)
+	c.instructions = append(c.instructions, ins...)
+	return posNewInstruction
 }

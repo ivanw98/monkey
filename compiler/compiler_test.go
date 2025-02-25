@@ -40,8 +40,8 @@ func TestInstructionsString(t *testing.T) {
 	}
 
 	expected := `0000 OpConstant 1
-0003 OpConstant2
-0006 OpConstant3
+0003 OpConstant 2
+0006 OpConstant 65535
 `
 	concatted := code.Instructions{}
 	for _, ins := range instructions {
