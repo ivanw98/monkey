@@ -5,10 +5,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"monkey/evaluator"
+	"monkey/compiler"
 	"monkey/lexer"
-	"monkey/object"
 	"monkey/parser"
+	"monkey/vm"
 )
 
 const PROMPT = ">>"
@@ -16,7 +16,7 @@ const PROMPT = ">>"
 // Start reads from the input source.
 func Start(in io.Reader, out io.Writer) error {
 	scanner := bufio.NewScanner(in)
-	env := object.NewEnvironment()
+	//	env := object.NewEnvironment()
 
 	for {
 		_, err := fmt.Fprintf(out, PROMPT)
@@ -38,17 +38,48 @@ func Start(in io.Reader, out io.Writer) error {
 			continue
 		}
 
-		evaluated := evaluator.Eval(program, env)
-		if evaluated != nil {
-			_, err = io.WriteString(out, evaluated.Inspect())
+		comp := compiler.New()
+		err = comp.Compile(program)
+		if err != nil {
+			_, err = fmt.Fprintf(out, "Whoops! Compilation failed:\n %s\n", err)
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(out, "\n")
-			if err != nil {
-				return err
-			}
+			continue
 		}
+
+		machine := vm.New(comp.Bytecode())
+		err = machine.Run()
+		if err != nil {
+			_, err = fmt.Fprintf(out, "Whoops! Executing bytecode failed:\n %s\n", err)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		stackTop := machine.StackTop()
+		_, err = io.WriteString(out, stackTop.Inspect())
+		if err != nil {
+			return err
+		}
+
+		_, err = io.WriteString(out, "\n")
+		if err != nil {
+			return err
+		}
+
+		//evaluated := evaluator.Eval(program, env)
+		//if evaluated != nil {
+		//	_, err = io.WriteString(out, evaluated.Inspect())
+		//	if err != nil {
+		//		return err
+		//	}
+		//	_, err = io.WriteString(out, "\n")
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 	}
 }
 
@@ -66,10 +97,22 @@ const MONKEY_FACE = `            __,__
 `
 
 func printParserErrors(out io.Writer, errors []string) {
-	io.WriteString(out, MONKEY_FACE)
-	io.WriteString(out, "Woops! We ran into some monkey business here!\n")
-	io.WriteString(out, " parser errors:\n")
+	_, err := io.WriteString(out, MONKEY_FACE)
+	if err != nil {
+		return
+	}
+	_, err = io.WriteString(out, "Woops! We ran into some monkey business here!\n")
+	if err != nil {
+		return
+	}
+	_, err = io.WriteString(out, " parser errors:\n")
+	if err != nil {
+		return
+	}
 	for _, msg := range errors {
-		io.WriteString(out, "\t"+msg+"\n")
+		_, err = io.WriteString(out, "\t"+msg+"\n")
+		if err != nil {
+			return
+		}
 	}
 }
