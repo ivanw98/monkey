@@ -23,10 +23,15 @@ type Definition struct {
 const (
 	// OpConstant retrieves the constant using the operand as an index and pushes it on to the stack.
 	OpConstant Opcode = iota
+
+	// OpAdd tells the VM to pop the two topmost elements off the stack, add them together and push the result back.
+	// It doesn't have any operands, it is one byte (a single Opcode).
+	OpAdd
 )
 
 var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}},
+	OpAdd:      {"OpAdd", []int{}},
 }
 
 // String outputs a readable format of Instructions.
@@ -54,10 +59,12 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 	operandCount := len(def.OperandWidths)
 
 	if len(operands) != operandCount {
-		return fmt.Sprintf("ERROR: operand len %d doe not match defined %d\n", len(operands), operandCount)
+		return fmt.Sprintf("ERROR: operand len %d does not match defined %d\n", len(operands), operandCount)
 	}
 
 	switch operandCount {
+	case 0:
+		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
 	}
