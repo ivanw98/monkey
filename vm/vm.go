@@ -42,29 +42,23 @@ func (vm *VM) Run() error {
 				return err
 			}
 
-		case code.OpAdd:
-			right := vm.pop()
-			left := vm.pop()
-			leftVal := left.(*object.Integer).Value
-			rightVal := right.(*object.Integer).Value
-
-			result := leftVal + rightVal
-			err := vm.push(&object.Integer{Value: result})
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
+			err := vm.executeBinaryOperation(op)
 			if err != nil {
 				return err
 			}
+
+		case code.OpPop:
+			vm.pop()
 		}
 	}
 
 	return nil
 }
 
-// StackTop returns the top element of the stack without removing it.
-func (vm *VM) StackTop() object.Object {
-	if vm.sp == 0 {
-		return nil
-	}
-	return vm.stack[vm.sp-1]
+// LastPoppedStackElem returns the last popped element from the stack, without modifying the stack pointer.
+func (vm *VM) LastPoppedStackElem() object.Object {
+	return vm.stack[vm.sp]
 }
 
 // push adds the given object to the stack and increments the stack pointer.
@@ -85,4 +79,33 @@ func (vm *VM) pop() object.Object {
 	o := vm.stack[vm.sp-1]
 	vm.sp--
 	return o
+}
+
+func (vm *VM) executeBinaryOperation(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
+
+	var result int64
+	switch op {
+	case code.OpAdd:
+		result = leftVal + rightVal
+
+	case code.OpSub:
+		result = leftVal - rightVal
+
+	case code.OpMul:
+		result = leftVal * rightVal
+
+	case code.OpDiv:
+		result = leftVal / rightVal
+
+	default:
+		return fmt.Errorf("unknown integer operator: %d", op)
+	}
+
+	return vm.push(&object.Integer{Value: result})
+
 }

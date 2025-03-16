@@ -58,8 +58,8 @@ func Start(in io.Reader, out io.Writer) error {
 			continue
 		}
 
-		stackTop := machine.StackTop()
-		_, err = io.WriteString(out, stackTop.Inspect())
+		lastPopped := machine.LastPoppedStackElem()
+		_, err = io.WriteString(out, lastPopped.Inspect())
 		if err != nil {
 			return err
 		}

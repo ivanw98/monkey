@@ -24,14 +24,30 @@ const (
 	// OpConstant retrieves the constant using the operand as an index and pushes it on to the stack.
 	OpConstant Opcode = iota
 
-	// OpAdd tells the VM to pop the two topmost elements off the stack, add them together and push the result back.
+	// OpAdd instructs the VM to pop the two topmost elements off the stack, add them together and push the result back.
 	// It doesn't have any operands, it is one byte (a single Opcode).
 	OpAdd
+
+	//OpPop instructs the VM to remove the topmost element off the stack. It will be emitted after every expression stmt.
+	OpPop
+
+	// OpSub instructs the VM to pop the two topmost elements off the stack, subtract them and push the result back.
+	OpSub
+
+	// OpMul instructs the VM to pop the two topmost elements off the stack, multiply them together and push the result back.
+	OpMul
+
+	// OpDiv instructs the VM to pop the two topmost elements off the stack, divide them and push the result back.
+	OpDiv
 )
 
 var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}},
 	OpAdd:      {"OpAdd", []int{}},
+	OpPop:      {"OpPop", []int{}},
+	OpSub:      {"OpSub", []int{}},
+	OpMul:      {"OpMul", []int{}},
+	OpDiv:      {"OpDiv", []int{}},
 }
 
 // String outputs a readable format of Instructions.
