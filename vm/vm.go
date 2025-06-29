@@ -10,6 +10,12 @@ import (
 // StackSize defines the default size allocated for a stack in bytes.
 const StackSize = 2048
 
+// True is an instance of true for the vm. Global variable that is immutable and unique.
+var True = &object.Boolean{Value: true}
+
+// False is an instance of false for the vm. Global variable that is immutable and unique.
+var False = &object.Boolean{Value: false}
+
 // VM represents a virtual machine for executing bytecode instructions, managing constants, and handling a stack.
 type VM struct {
 	constants    []object.Object
@@ -50,6 +56,17 @@ func (vm *VM) Run() error {
 
 		case code.OpPop:
 			vm.pop()
+
+		case code.OpTrue:
+			err := vm.push(True)
+			if err != nil {
+				return err
+			}
+		case code.OpFalse:
+			err := vm.push(False)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

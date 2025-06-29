@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-// Instructions represents a sequence of bytes intended for processing or interpretation.
+// Instructions represent a sequence of bytes intended for processing or interpretation.
 //
-// a single Instruction consists of an Opcode and an optional number of operands.
+// A single Instruction consists of an Opcode and an optional number of operands.
 type Instructions []byte
 
 // Opcode represents a single instruction code in a virtual machine or processing unit.
@@ -39,6 +39,12 @@ const (
 
 	// OpDiv instructs the VM to pop the two topmost elements off the stack, divide them and push the result back.
 	OpDiv
+
+	// OpTrue instructs the VM to load boolean `true` onto the stack.
+	OpTrue
+
+	// OpFalse instructs the VM to load boolean `false` onto the stack.
+	OpFalse
 )
 
 var definitions = map[Opcode]*Definition{
@@ -48,6 +54,8 @@ var definitions = map[Opcode]*Definition{
 	OpSub:      {"OpSub", []int{}},
 	OpMul:      {"OpMul", []int{}},
 	OpDiv:      {"OpDiv", []int{}},
+	OpTrue:     {"OpTrue", []int{}},
+	OpFalse:    {"OpFalse", []int{}},
 }
 
 // String outputs a readable format of Instructions.
@@ -120,7 +128,7 @@ func Make(op Opcode, operands ...int) []byte {
 		width := def.OperandWidths[i]
 		switch width {
 		case 2:
-			// endianness is the order in which bytes within a word are addressed in computer memory,
+			// Endianness is the order in which bytes within a word are addressed in computer memory,
 			// counting only byte significance compared to earliness.
 			// A big-endian system stores the most significant byte of a word at the smallest memory address
 			binary.BigEndian.PutUint16(instruction[offset:], uint16(o))
@@ -131,7 +139,7 @@ func Make(op Opcode, operands ...int) []byte {
 	return instruction
 }
 
-// ReadOperands decodes the operands of an instruction based on its definition, and also tells us how many bytes were read.
+// ReadOperands decodes the operands of an instruction based on its definition and also tells us how many bytes were read.
 func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
 	operands := make([]int, len(def.OperandWidths))
 	offset := 0
@@ -147,7 +155,7 @@ func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
 	return operands, offset
 }
 
-// ReadUint16 reads two bytes from the provided Instructions and returns them as a uint16 in big-endian order.
+// ReadUint16 reads two bytes from the provided Instructions and returns them as an uint16 in big-endian order.
 func ReadUint16(ins Instructions) uint16 {
 	return binary.BigEndian.Uint16(ins)
 }

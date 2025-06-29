@@ -74,6 +74,28 @@ func TestIntegerArithmatic(t *testing.T) {
 	runCompilerTest(t, tests)
 }
 
+func TestBooleanExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             "true",
+			expectedConstants: []any{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpPop),
+			},
+		}, {
+			input:             "false",
+			expectedConstants: []any{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpFalse),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTest(t, tests)
+}
+
 // runCompilerTest takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
 func runCompilerTest(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
