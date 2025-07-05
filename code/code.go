@@ -55,6 +55,12 @@ const (
 	// OpGreaterThan instructs the VM to use a greater than comparison
 	// Note that we do not need a less tahn operator as 3 < 5 can be re-ordered to 5 > 3.ß
 	OpGreaterThan
+
+	// OpMinus instructs the VM to negate an integer.
+	OpMinus
+
+	// OpBang instructs the VM to negate a boolean.
+	OpBang
 )
 
 var definitions = map[Opcode]*Definition{
@@ -69,6 +75,8 @@ var definitions = map[Opcode]*Definition{
 	OpEqual:       {"OpEqual", []int{}},
 	OpNotEqual:    {"OpNotEqual", []int{}},
 	OpGreaterThan: {"OpGreaterThan", []int{}},
+	OpMinus:       {"OpMinus", []int{}},
+	OpBang:        {"OpBang", []int{}},
 }
 
 // String outputs a readable format of Instructions.

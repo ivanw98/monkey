@@ -69,6 +69,15 @@ func TestIntegerArithmatic(t *testing.T) {
 				code.Make(code.OpPop),
 			},
 		},
+		{
+			input:             "-1",
+			expectedConstants: []any{1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpMinus),
+				code.Make(code.OpPop),
+			},
+		},
 	}
 
 	runCompilerTest(t, tests)
@@ -152,6 +161,15 @@ func TestBooleanExpressions(t *testing.T) {
 				code.Make(code.OpPop),
 			},
 		},
+		{
+			input:             "!true",
+			expectedConstants: []any{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpBang),
+				code.Make(code.OpPop),
+			},
+		},
 	}
 
 	runCompilerTest(t, tests)
@@ -186,7 +204,7 @@ func runCompilerTest(t *testing.T, tests []compilerTestCase) {
 
 func testConstants(_ *testing.T, expected []any, actual []object.Object) error {
 	if len(expected) != len(actual) {
-		return fmt.Errorf("wrong number og constants. got=%d, want=%d", len(actual), len(expected))
+		return fmt.Errorf("wrong number of constants. got=%d, want=%d", len(actual), len(expected))
 	}
 
 	for i, constant := range expected {
