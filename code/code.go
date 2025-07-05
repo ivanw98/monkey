@@ -45,17 +45,30 @@ const (
 
 	// OpFalse instructs the VM to load boolean `false` onto the stack.
 	OpFalse
+
+	// OpEqual instructs the VM to use an equal to comparison operator.
+	OpEqual
+
+	// OpNotEqual instructs the VM to use a not equal to comparison operator.
+	OpNotEqual
+
+	// OpGreaterThan instructs the VM to use a greater than comparison
+	// Note that we do not need a less tahn operator as 3 < 5 can be re-ordered to 5 > 3.ß
+	OpGreaterThan
 )
 
 var definitions = map[Opcode]*Definition{
-	OpConstant: {"OpConstant", []int{2}},
-	OpAdd:      {"OpAdd", []int{}},
-	OpPop:      {"OpPop", []int{}},
-	OpSub:      {"OpSub", []int{}},
-	OpMul:      {"OpMul", []int{}},
-	OpDiv:      {"OpDiv", []int{}},
-	OpTrue:     {"OpTrue", []int{}},
-	OpFalse:    {"OpFalse", []int{}},
+	OpConstant:    {"OpConstant", []int{2}},
+	OpAdd:         {"OpAdd", []int{}},
+	OpPop:         {"OpPop", []int{}},
+	OpSub:         {"OpSub", []int{}},
+	OpMul:         {"OpMul", []int{}},
+	OpDiv:         {"OpDiv", []int{}},
+	OpTrue:        {"OpTrue", []int{}},
+	OpFalse:       {"OpFalse", []int{}},
+	OpEqual:       {"OpEqual", []int{}},
+	OpNotEqual:    {"OpNotEqual", []int{}},
+	OpGreaterThan: {"OpGreaterThan", []int{}},
 }
 
 // String outputs a readable format of Instructions.
