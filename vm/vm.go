@@ -16,6 +16,9 @@ var True = &object.Boolean{Value: true}
 // False is an instance of false for the vm. Global variable that is immutable and unique.
 var False = &object.Boolean{Value: false}
 
+// Null is an instance of null for the vm. Global variable that is immutable and unique.
+var Null = &object.Null{}
+
 // VM represents a virtual machine for executing bytecode instructions, managing constants, and handling a stack.
 type VM struct {
 	constants    []object.Object
@@ -62,23 +65,52 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+
 		case code.OpFalse:
 			err := vm.push(False)
 			if err != nil {
 				return err
 			}
+
 		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
 			err := vm.executeComparison(op)
 			if err != nil {
 				return err
 			}
+
 		case code.OpBang:
 			err := vm.executeBangOperator()
 			if err != nil {
 				return err
 			}
+
 		case code.OpMinus:
 			err := vm.executeMinusOperator()
+			if err != nil {
+				return err
+			}
+
+		case code.OpJump:
+			// decode the operand located right after the opcode.
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			// set the instruction pointer, `ip`, to the target of our jump
+			// we need to set `ip` to the offset right before the one we want.
+			// the loop will increment it to the value we want on the next cycle.
+			ip = pos - 1
+
+		case code.OpJumpNotTruthy:
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			// skip over the two bytes of the operand in the next cycle
+			ip += 2
+
+			condition := vm.pop()
+			if !isTruthy(condition) {
+				// if not truthy, we jump - similar to case above
+				ip = pos - 1
+			}
+
+		case code.OpNull:
+			err := vm.push(Null)
 			if err != nil {
 				return err
 			}
@@ -184,6 +216,8 @@ func (vm *VM) executeBangOperator() error {
 		return vm.push(True)
 	case True:
 		return vm.push(False)
+	case Null:
+		return vm.push(True)
 	default:
 		return vm.push(False)
 	}
@@ -204,4 +238,16 @@ func nativeBoolToBooleanObject(input bool) *object.Boolean {
 		return True
 	}
 	return False
+}
+
+func isTruthy(obj object.Object) bool {
+	switch obj := obj.(type) {
+
+	case *object.Boolean:
+		return obj.Value
+	case *object.Null:
+		return false
+	default:
+		return true
+	}
 }
