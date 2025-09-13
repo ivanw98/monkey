@@ -80,7 +80,7 @@ func TestIntegerArithmatic(t *testing.T) {
 		},
 	}
 
-	runCompilerTest(t, tests)
+	runCompilerTests(t, tests)
 }
 
 func TestBooleanExpressions(t *testing.T) {
@@ -172,7 +172,7 @@ func TestBooleanExpressions(t *testing.T) {
 		},
 	}
 
-	runCompilerTest(t, tests)
+	runCompilerTests(t, tests)
 }
 
 func TestConditionals(t *testing.T) {
@@ -227,11 +227,60 @@ func TestConditionals(t *testing.T) {
 		},
 	}
 
-	runCompilerTest(t, tests)
+	runCompilerTests(t, tests)
 }
 
-// runCompilerTest takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
-func runCompilerTest(t *testing.T, tests []compilerTestCase) {
+func TestGlobalLetStatements(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input: `
+			let one = 1;
+			let two = 2;
+			`,
+			expectedConstants: []any{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpSetGlobal, 1),
+			},
+		},
+		{
+			input: `
+			let one = 1;
+			one;
+			`,
+			expectedConstants: []any{1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `
+			let one = 1;
+			let two = one;
+			two;
+			`,
+			expectedConstants: []any{1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				code.Make(code.OpSetGlobal, 1),
+				code.Make(code.OpGetGlobal, 1),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
+// runCompilerTests takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
+func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 
 	for _, tt := range tests {

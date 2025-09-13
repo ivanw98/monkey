@@ -53,7 +53,7 @@ const (
 	OpNotEqual
 
 	// OpGreaterThan instructs the VM to use a greater than comparison
-	// Note that we do not need a less tahn operator as 3 < 5 can be re-ordered to 5 > 3.ß
+	// Note that we do not need a less than operator as 3 < 5 can be re-ordered to 5 > 3.ß
 	OpGreaterThan
 
 	// OpMinus instructs the VM to negate an integer.
@@ -70,6 +70,12 @@ const (
 
 	// OpNull instructs the VM to insert an instance of vm.Null on the stack.
 	OpNull
+
+	// OpGetGlobal instructs the VM to retrieve a global variable (using operand as index) and push its value onto the stack.
+	OpGetGlobal
+
+	// OpSetGlobal instructs the VM to pop a value from the stack and store it in a global variable (using operand as index).
+	OpSetGlobal
 )
 
 var definitions = map[Opcode]*Definition{
@@ -89,6 +95,8 @@ var definitions = map[Opcode]*Definition{
 	OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
 	OpJump:          {"OpJump", []int{2}},
 	OpNull:          {"OpNull", []int{}},
+	OpGetGlobal:     {"OpGetGlobal", []int{2}},
+	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 }
 
 // String outputs a readable format of Instructions.

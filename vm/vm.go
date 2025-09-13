@@ -10,6 +10,9 @@ import (
 // StackSize defines the default size allocated for a stack in bytes.
 const StackSize = 2048
 
+// GlobalSize is the number of global bindings for `let` in the virtual machine.
+const GlobalSize = 65536
+
 // True is an instance of true for the vm. Global variable that is immutable and unique.
 var True = &object.Boolean{Value: true}
 
@@ -25,6 +28,7 @@ type VM struct {
 	instructions code.Instructions
 	stack        []object.Object
 	sp           int // Always points to the next value. Top of stack is stack[sp-1]
+	globals      []object.Object
 }
 
 // New initializes a new instance of the VM.
@@ -34,7 +38,15 @@ func New(bytecode *compiler.Bytecode) *VM {
 		instructions: bytecode.Instructions,
 		stack:        make([]object.Object, StackSize),
 		sp:           0,
+		globals:      make([]object.Object, GlobalSize),
 	}
+}
+
+// New NewWithGlobalStore a new instance of the VM that tracks global state for the REPL.
+func NewWithGlobalStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
+	vm := New(bytecode)
+	vm.globals = s
+	return vm
 }
 
 // Run executes the bytecode instructions stored in the VM and manages the stack using provided constants and opcodes.
@@ -114,6 +126,21 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpSetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			vm.globals[globalIndex] = vm.pop()
+
+		case code.OpGetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			err := vm.push(vm.globals[globalIndex])
+			if err != nil {
+				return err
+			}
+
 		}
 	}
 
