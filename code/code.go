@@ -79,6 +79,9 @@ const (
 
 	// OpArray defines an opcode to instruct the VM to leave N values on the stack.
 	OpArray
+
+	// OpHash is an opcode that specifies to the VM the number of keys and values sitting on the stack
+	OpHash
 )
 
 var definitions = map[Opcode]*Definition{
@@ -101,6 +104,7 @@ var definitions = map[Opcode]*Definition{
 	OpGetGlobal:     {"OpGetGlobal", []int{2}},
 	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 	OpArray:         {"OpArray", []int{2}},
+	OpHash:          {"OpHash", []int{2}},
 }
 
 // String outputs a readable format of Instructions.
