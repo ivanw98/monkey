@@ -141,6 +141,16 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpArray:
+			numOfElements := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+			array := vm.buildArray(vm.sp-numOfElements, vm.sp)
+			vm.sp = vm.sp - numOfElements
+
+			err := vm.push(array)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -282,6 +292,17 @@ func (vm *VM) executeStringBinaryOperation(op code.Opcode, left object.Object, r
 	rightValue := right.(*object.String).Value
 
 	return vm.push(&object.String{Value: leftValue + rightValue})
+}
+
+// buildArray iterates through the elements in the specified section of the stack, adding each to an *object.Array.
+// This array is then pushed on to the stack after the elements have been taken off.
+func (vm *VM) buildArray(startIndex, endIndex int) object.Object {
+	elements := make([]object.Object, endIndex-startIndex)
+	for i := startIndex; i < endIndex; i++ {
+		elements[i-startIndex] = vm.stack[i]
+	}
+
+	return &object.Array{Elements: elements}
 }
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {

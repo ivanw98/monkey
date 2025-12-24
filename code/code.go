@@ -76,6 +76,9 @@ const (
 
 	// OpSetGlobal instructs the VM to pop a value from the stack and store it in a global variable (using operand as index).
 	OpSetGlobal
+
+	// OpArray defines an opcode to instruct the VM to leave N values on the stack.
+	OpArray
 )
 
 var definitions = map[Opcode]*Definition{
@@ -97,6 +100,7 @@ var definitions = map[Opcode]*Definition{
 	OpNull:          {"OpNull", []int{}},
 	OpGetGlobal:     {"OpGetGlobal", []int{2}},
 	OpSetGlobal:     {"OpSetGlobal", []int{2}},
+	OpArray:         {"OpArray", []int{2}},
 }
 
 // String outputs a readable format of Instructions.
