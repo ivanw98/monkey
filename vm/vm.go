@@ -165,7 +165,6 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
-
 		}
 	}
 
@@ -325,7 +324,7 @@ func (vm *VM) buildArray(startIndex, endIndex int) object.Object {
 func (vm *VM) buildHash(startIndex, endIndex int) (object.Object, error) {
 	hashedPairs := make(map[object.HashKey]object.HashPair)
 
-	for i := startIndex; i < endIndex; i++ {
+	for i := startIndex; i < endIndex; i += 2 {
 		key := vm.stack[i]
 		value := vm.stack[i+1]
 		pair := object.HashPair{
