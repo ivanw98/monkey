@@ -82,6 +82,9 @@ const (
 
 	// OpHash is an opcode that specifies to the VM the number of keys and values sitting on the stack
 	OpHash
+
+	// OpIndex tells the VM to take the two values sitting on top of the stack to perform an index operation.
+	OpIndex
 )
 
 var definitions = map[Opcode]*Definition{
@@ -105,6 +108,7 @@ var definitions = map[Opcode]*Definition{
 	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 	OpArray:         {"OpArray", []int{2}},
 	OpHash:          {"OpHash", []int{2}},
+	OpIndex:         {"OpIndex", []int{}},
 }
 
 // String outputs a readable format of Instructions.
