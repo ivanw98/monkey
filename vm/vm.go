@@ -176,29 +176,17 @@ func (vm *VM) executeBinaryOperation(op code.Opcode) error {
 	right := vm.pop()
 	left := vm.pop()
 
-	leftVal := left.(*object.Integer).Value
-	rightVal := right.(*object.Integer).Value
+	leftType := left.Type()
+	rightType := right.Type()
 
-	var result int64
-	switch op {
-	case code.OpAdd:
-		result = leftVal + rightVal
-
-	case code.OpSub:
-		result = leftVal - rightVal
-
-	case code.OpMul:
-		result = leftVal * rightVal
-
-	case code.OpDiv:
-		result = leftVal / rightVal
-
+	switch {
+	case leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ:
+		return vm.executeIntegerBinaryOperation(op, left, right)
+	case leftType == object.STRING_OBJ && rightType == object.STRING_OBJ:
+		return vm.executeStringBinaryOperation(op, left, right)
 	default:
-		return fmt.Errorf("unknown integer operator: %d", op)
+		return fmt.Errorf("unsupported types for binary operator: %s %s", leftType, rightType)
 	}
-
-	return vm.push(&object.Integer{Value: result})
-
 }
 
 func (vm *VM) executeComparison(op code.Opcode) error {
@@ -258,6 +246,42 @@ func (vm *VM) executeMinusOperator() error {
 
 	val := operand.(*object.Integer).Value
 	return vm.push(&object.Integer{Value: -val})
+}
+
+func (vm *VM) executeIntegerBinaryOperation(op code.Opcode, left object.Object, right object.Object) error {
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
+
+	var result int64
+	switch op {
+	case code.OpAdd:
+		result = leftVal + rightVal
+
+	case code.OpSub:
+		result = leftVal - rightVal
+
+	case code.OpMul:
+		result = leftVal * rightVal
+
+	case code.OpDiv:
+		result = leftVal / rightVal
+
+	default:
+		return fmt.Errorf("unknown integer operator: %d", op)
+	}
+
+	return vm.push(&object.Integer{Value: result})
+}
+
+func (vm *VM) executeStringBinaryOperation(op code.Opcode, left object.Object, right object.Object) error {
+	if op != code.OpAdd {
+		return fmt.Errorf("unknown string operator: %d", op)
+	}
+
+	leftValue := left.(*object.String).Value
+	rightValue := right.(*object.String).Value
+
+	return vm.push(&object.String{Value: leftValue + rightValue})
 }
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {

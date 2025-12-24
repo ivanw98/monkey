@@ -279,6 +279,32 @@ func TestGlobalLetStatements(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestStringExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		// case 1: make sure the compiler knows how to treat string literals as constants
+		{
+			input:             `"monkey"`,
+			expectedConstants: []any{"monkey"},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		// case 2: make sure the compiler can concatenate two strings with the + infix operator.
+		{
+			input:             `"mon" + "key"`,
+			expectedConstants: []any{"mon", "key"},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+	runCompilerTests(t, tests)
+}
+
 // runCompilerTests takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
@@ -311,14 +337,32 @@ func testConstants(_ *testing.T, expected []any, actual []object.Object) error {
 		return fmt.Errorf("wrong number of constants. got=%d, want=%d", len(actual), len(expected))
 	}
 
-	for i, constant := range expected {
-		switch constant := constant.(type) {
+	for i, c := range expected {
+		switch constant := c.(type) {
 		case int:
 			err := testIntegerObject(int64(constant), actual[i])
 			if err != nil {
 				return fmt.Errorf("constant %d - testIntegerObject failed: %s", i, err)
 			}
+		case string:
+			err := testStringObject(constant, actual[i])
+			if err != nil {
+				return fmt.Errorf("constant %d - testStringObject failed: %s", i, err)
+			}
 		}
+	}
+
+	return nil
+}
+
+func testStringObject(expected string, actual object.Object) error {
+	result, ok := actual.(*object.String)
+	if !ok {
+		return fmt.Errorf("object is not String. got=%T (%+v)", actual, actual)
+	}
+
+	if result.Value != expected {
+		return fmt.Errorf("object has wrong value. got=%q, want=%q", result.Value, expected)
 	}
 
 	return nil

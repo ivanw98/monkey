@@ -107,6 +107,25 @@ func TestGlobalLetStatements(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestStringExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input:    `"monkey"`,
+			expected: "monkey",
+		},
+		{
+			input:    `"mon"+"key"`,
+			expected: "monkey",
+		},
+		{
+			input:    `"mon"+"key"+"banana"`,
+			expected: "monkeybanana",
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 func runVmTests(t *testing.T, tests []vmTestCase) {
 	t.Helper()
 
@@ -147,11 +166,29 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 			t.Errorf("testBooleanObject failed: %s", err)
 		}
 
+	case string:
+		err := testStringObject(expected, actual)
+		if err != nil {
+			t.Errorf("testStringObject failed:%s", err)
+		}
 	case *object.Null:
 		if actual != vm.Null {
 			t.Errorf("object is not Null: %T (%+v)", actual, actual)
 		}
 	}
+}
+
+func testStringObject(expected string, actual object.Object) error {
+	result, ok := actual.(*object.String)
+	if !ok {
+		return fmt.Errorf("object is not a String. got=%T (%+v)", actual, actual)
+	}
+
+	if result.Value != expected {
+		return fmt.Errorf("object has wrong value. want=%q, got=%q", expected, result.Value)
+	}
+
+	return nil
 }
 
 func testBooleanObject(expected bool, actual object.Object) error {
