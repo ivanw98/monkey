@@ -52,8 +52,8 @@ const (
 	// OpNotEqual instructs the VM to use a not equal to comparison operator.
 	OpNotEqual
 
-	// OpGreaterThan instructs the VM to use a greater than comparison
-	// Note that we do not need a less than operator as 3 < 5 can be re-ordered to 5 > 3.ß
+	// OpGreaterThan instructs the VM to use a greater than comparison.
+	// Note that we do not need a less than operator as 3 < 5 can be re-ordered to 5 > 3.
 	OpGreaterThan
 
 	// OpMinus instructs the VM to negate an integer.
@@ -77,14 +77,23 @@ const (
 	// OpSetGlobal instructs the VM to pop a value from the stack and store it in a global variable (using operand as index).
 	OpSetGlobal
 
-	// OpArray defines an opcode to instruct the VM to leave N values on the stack.
+	// OpArray instructs the VM to build an array from the N topmost elements on the stack and push the result.
 	OpArray
 
-	// OpHash is an opcode that specifies to the VM the number of keys and values sitting on the stack
+	// OpHash is an opcode that specifies to the VM the number of keys and values sitting on the stack.
 	OpHash
 
 	// OpIndex tells the VM to take the two values sitting on top of the stack to perform an index operation.
 	OpIndex
+
+	// OpCall tells the VM to execute a function on top of the stack.
+	OpCall
+
+	// OpReturnValue instructs the VM to return from a function with a return value.
+	OpReturnValue
+
+	// OpReturn instructs the VM to return from a function with no return value (or an implicit vm.Null).
+	OpReturn
 )
 
 var definitions = map[Opcode]*Definition{
@@ -109,6 +118,9 @@ var definitions = map[Opcode]*Definition{
 	OpArray:         {"OpArray", []int{2}},
 	OpHash:          {"OpHash", []int{2}},
 	OpIndex:         {"OpIndex", []int{}},
+	OpCall:          {"OpCall", []int{}},
+	OpReturnValue:   {"OpReturnValue", []int{}},
+	OpReturn:        {"OpReturn", []int{}},
 }
 
 // String outputs a readable format of Instructions.

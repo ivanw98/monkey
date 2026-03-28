@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"monkey/ast"
+	"monkey/code"
 	"strings"
 )
 
@@ -12,16 +13,17 @@ import (
 type ObjectType string
 
 const (
-	INTEGER_OBJ      = "INTEGER"
-	BOOLEAN_OBJ      = "BOOLEAN"
-	NULL_OBJ         = "NULL"
-	RETURN_VALUE_OBJ = "RETURN_VALUE"
-	ERROR_OBJ        = "ERROR"
-	FUNCTION_OBJ     = "FUNCTION"
-	STRING_OBJ       = "STRING"
-	BUILTIN_OBJ      = "BUILTIN"
-	ARRAY_OBJ        = "ARRAY"
-	HASH_OBJ         = "HASH"
+	INTEGER_OBJ           = "INTEGER"
+	BOOLEAN_OBJ           = "BOOLEAN"
+	NULL_OBJ              = "NULL"
+	RETURN_VALUE_OBJ      = "RETURN_VALUE"
+	ERROR_OBJ             = "ERROR"
+	FUNCTION_OBJ          = "FUNCTION"
+	STRING_OBJ            = "STRING"
+	BUILTIN_OBJ           = "BUILTIN"
+	ARRAY_OBJ             = "ARRAY"
+	HASH_OBJ              = "HASH"
+	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION_OBJ"
 )
 
 // BuiltinFunction represents a function type that accepts a variable number of Object arguments and returns an Object.
@@ -97,6 +99,10 @@ type Error struct {
 
 // Null represents the absence of a value.
 type Null struct {
+}
+
+type CompiledFunction struct {
+	Instructions code.Instructions
 }
 
 // Inspect returns a string representation of the Integer's value.
@@ -256,6 +262,17 @@ func (h *Hash) Inspect() string {
 	return out.String()
 }
 
+// Type returns the HASH_OBJ object type.
 func (h *Hash) Type() ObjectType {
 	return HASH_OBJ
+}
+
+// Type returns the COMPILED_FUNCTION_OBJ object type.
+func (cf *CompiledFunction) Type() ObjectType {
+	return COMPILED_FUNCTION_OBJ
+}
+
+// Inspect returns a string representation of a CompiledFunction object, including its memory address.
+func (cf *CompiledFunction) Inspect() string {
+	return fmt.Sprintf("CompiledFunction[%p]", cf)
 }

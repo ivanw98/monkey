@@ -429,6 +429,76 @@ func TestIndexExpressions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestFunctions(t *testing.T) {
+	// example: fn() { return 5 + 10}
+	// OpConstant 0 <-- Load 5 on to the stack
+	// OpConstant 1 <-- Load 10 on to the stack
+	// OpAdd <-- Add two values on the top of the stack together (5 + 10)
+	// OpReturnValue <-- Load the return value (15) on top of stack
+	tests := []compilerTestCase{
+		{
+			input: `fn() { return 5 + 10 }`,
+			expectedConstants: []any{
+				5,
+				10,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `fn() { 5 + 10 }`,
+			expectedConstants: []any{
+				5,
+				10,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `fn() { 1; 2 }`,
+			expectedConstants: []any{
+				1,
+				2,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpPop),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             `fn() { }`,
+			expectedConstants: []any{[]code.Instructions{code.Make(code.OpReturn)}},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+	runCompilerTests(t, tests)
+}
+
 // runCompilerTests takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
@@ -472,6 +542,16 @@ func testConstants(_ *testing.T, expected []any, actual []object.Object) error {
 			err := testStringObject(constant, actual[i])
 			if err != nil {
 				return fmt.Errorf("constant %d - testStringObject failed: %s", i, err)
+			}
+		case []code.Instructions:
+			fn, ok := actual[i].(*object.CompiledFunction)
+			if !ok {
+				return fmt.Errorf("constant %d - not a function: %T", i, actual[i])
+			}
+
+			err := testInstructions(constant, fn.Instructions)
+			if err != nil {
+				return fmt.Errorf("constant %d - testInstructions failed %s", i, err)
 			}
 		}
 	}
