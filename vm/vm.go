@@ -26,9 +26,9 @@ var Null = &object.Null{}
 type VM struct {
 	constants    []object.Object
 	instructions code.Instructions
-	stack        []object.Object
-	sp           int // Always points to the next value. Top of stack is stack[sp-1]
-	globals      []object.Object
+	stack        []object.Object // holds temporary values during expression evaluation
+	sp           int             // Always points to the next value. Top of stack is stack[sp-1]
+	globals      []object.Object // the VM's storage for all `let` bindings
 }
 
 // New initializes a new instance of the VM.
