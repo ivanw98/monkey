@@ -11,6 +11,8 @@ func TestCompilerScopes(t *testing.T) {
 		t.Errorf("scopeIndex wrong. got=%d, want=%d", comp.scopeIndex, 0)
 	}
 
+	globalSymbolTable := comp.symbolTable
+
 	comp.emit(code.OpMul)
 
 	comp.enterScope()
@@ -31,12 +33,23 @@ func TestCompilerScopes(t *testing.T) {
 			last.Opcode, code.OpSub)
 	}
 
+	if comp.symbolTable.Outer != globalSymbolTable {
+		t.Errorf("compiler did not enclose symbol table")
+	}
+
 	comp.leaveScope()
 	if comp.scopeIndex != 0 {
 		t.Errorf("scopeIndex wrong. got=%d, want=%d",
 			comp.scopeIndex, 0)
 	}
 
+	if comp.symbolTable != globalSymbolTable {
+		t.Errorf("compiler did not restore global symbol table")
+	}
+
+	if comp.symbolTable.Outer != nil {
+		t.Errorf("compiler modified symbol table incorrectly")
+	}
 	comp.emit(code.OpAdd)
 
 	if len(comp.scopes[comp.scopeIndex].instructions) != 2 {

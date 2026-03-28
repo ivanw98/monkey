@@ -24,6 +24,12 @@ func TestMake(t *testing.T) {
 			[]int{},
 			[]byte{byte(code.OpAdd)},
 		},
+		{
+			name:     "OpGetLocal",
+			op:       code.OpGetLocal,
+			operands: []int{255},
+			expected: []byte{byte(code.OpGetLocal), 255},
+		},
 	}
 
 	for _, tt := range tests {
@@ -46,32 +52,44 @@ func TestMake(t *testing.T) {
 
 func TestReadOperands(t *testing.T) {
 	tests := []struct {
+		name      string
 		op        code.Opcode
 		operands  []int
 		bytesRead int
 	}{
 		{
-			code.OpConstant, []int{65535}, 2,
+			name:      "Read OpConstant",
+			op:        code.OpConstant,
+			operands:  []int{65535},
+			bytesRead: 2,
+		},
+		{
+			name:      "Read OpGetLocal",
+			op:        code.OpGetLocal,
+			operands:  []int{255},
+			bytesRead: 1,
 		},
 	}
 
 	for _, tt := range tests {
-		instruction := code.Make(tt.op, tt.operands...)
-		def, err := code.Lookup(byte(tt.op))
-		if err != nil {
-			t.Fatalf("definition not found: %q\n", err)
-		}
-
-		operandsRead, n := code.ReadOperands(def, instruction[1:])
-		if n != tt.bytesRead {
-			t.Fatalf("n wrong. want=%d, got=%d", tt.bytesRead, n)
-		}
-
-		for i, want := range tt.operands {
-			if operandsRead[i] != want {
-				t.Errorf("operand wrong. want=%d, got=%d", want, operandsRead[i])
+		t.Run(tt.name, func(t *testing.T) {
+			instruction := code.Make(tt.op, tt.operands...)
+			def, err := code.Lookup(byte(tt.op))
+			if err != nil {
+				t.Fatalf("definition not found: %q\n", err)
 			}
-		}
+
+			operandsRead, n := code.ReadOperands(def, instruction[1:])
+			if n != tt.bytesRead {
+				t.Fatalf("n wrong. want=%d, got=%d", tt.bytesRead, n)
+			}
+
+			for i, want := range tt.operands {
+				if operandsRead[i] != want {
+					t.Errorf("operand wrong. want=%d, got=%d", want, operandsRead[i])
+				}
+			}
+		})
 	}
 
 }
@@ -79,13 +97,35 @@ func TestReadOperands(t *testing.T) {
 func TestInstructionsString(t *testing.T) {
 	instructions := []code.Instructions{
 		code.Make(code.OpAdd),
+		code.Make(code.OpGetLocal, 1),
 		code.Make(code.OpConstant, 2),
 		code.Make(code.OpConstant, 65535),
 	}
 
+	// represents offset, operand, bytes used
+	/**
+	So the sequence is:
+	OpAdd
+	starts at offset 0
+	size 1 (OpAdd is one byte)
+	next instruction starts at 1
+	OpGetLocal 1
+	starts at offset 1
+	size 2 (OpGetLocal is one byte + has an operand of size 1 byte)
+	next instruction starts at 3
+	OpConstant 2
+	starts at offset 3
+	size 3 (OpConstant is one byte + has an operand of size 2 bytes)
+	next instruction starts at 6
+	OpConstant 65535
+	starts at offset 6
+	size 3
+	*/
+
 	expected := `0000 OpAdd
-0001 OpConstant 2
-0004 OpConstant 65535
+0001 OpGetLocal 1
+0003 OpConstant 2
+0006 OpConstant 65535
 `
 	concatted := code.Instructions{}
 	for _, ins := range instructions {

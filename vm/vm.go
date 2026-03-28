@@ -43,7 +43,7 @@ type VM struct {
 func New(bytecode *compiler.Bytecode) *VM {
 	// pre-allocate frames slice
 	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
-	mainFrame := NewFrame(mainFn)
+	mainFrame := NewFrame(mainFn, 0)
 
 	frames := make([]*Frame, MaxFrames)
 	frames[0] = mainFrame
@@ -213,28 +213,49 @@ func (vm *VM) Run() error {
 			}
 
 			// Create a new frame for the compiledFn.
-			frame := NewFrame(fn)
+			frame := NewFrame(fn, vm.sp)
 			// add the frame to the vm frame stack.
 			vm.pushFrame(frame)
+			// save the value of sp before executing a function
+			vm.sp = frame.basePointer + fn.NumLocals // reserve fn.NumLocals amount of slots on the stack.
 
 		case code.OpReturnValue:
 			// Get fn return val from stack
 			returnVal := vm.pop()
 			// remove frame from stack
-			vm.popFrame()
+			frame := vm.popFrame()
 
-			// discard CompiledFunction object
-			vm.pop()
+			// rewind the entire stack to the caller’s position
+			vm.sp = frame.basePointer - 1
 			if err := vm.push(returnVal); err != nil {
 				return err
 			}
 
 		case code.OpReturn:
 			// no return val so popFrame immediately
-			vm.popFrame()
-			vm.pop() // discard fn
-
+			frame := vm.popFrame()
+			vm.sp = frame.basePointer - 1
 			if err := vm.push(Null); err != nil {
+				return err
+			}
+
+		case code.OpSetLocal:
+			localOperandBytes := ins[ip+1:]
+			localIdx := code.ReadUint8(localOperandBytes)
+			vm.currentFrame().ip += 1
+			frame := vm.currentFrame()
+
+			// store the popped value in this frame's local slot to create local binding
+			vm.stack[frame.basePointer+int(localIdx)] = vm.pop()
+
+		case code.OpGetLocal:
+			localOperandBytes := ins[ip+1:]
+			localIdx := code.ReadUint8(localOperandBytes)
+			vm.currentFrame().ip += 1
+			frame := vm.currentFrame()
+
+			localBinding := vm.stack[frame.basePointer+int(localIdx)]
+			if err := vm.push(localBinding); err != nil {
 				return err
 			}
 		}

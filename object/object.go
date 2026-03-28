@@ -103,6 +103,7 @@ type Null struct {
 
 type CompiledFunction struct {
 	Instructions code.Instructions
+	NumLocals    int
 }
 
 // Inspect returns a string representation of the Integer's value.

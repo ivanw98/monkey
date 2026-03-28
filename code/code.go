@@ -16,7 +16,10 @@ type Opcode byte
 
 // Definition helps make Opcode readable and stores the number of bytes each operand takes up.
 type Definition struct {
-	Name          string
+	// Name is the human-readable name of the opcode, used for debugging and disassembly output.
+	Name string
+
+	// OperandWidths holds the byte width of each operand for the instruction.
 	OperandWidths []int
 }
 
@@ -94,6 +97,12 @@ const (
 
 	// OpReturn instructs the VM to return from a function with no return value (or an implicit vm.Null).
 	OpReturn
+
+	// OpGetLocal instructs the VM to retrieve a local binding.
+	OpGetLocal
+
+	// OpSetLocal instructs the VM to create a local binding.
+	OpSetLocal
 )
 
 var definitions = map[Opcode]*Definition{
@@ -121,6 +130,8 @@ var definitions = map[Opcode]*Definition{
 	OpCall:          {"OpCall", []int{}},
 	OpReturnValue:   {"OpReturnValue", []int{}},
 	OpReturn:        {"OpReturn", []int{}},
+	OpGetLocal:      {"OpGetLocal", []int{1}},
+	OpSetLocal:      {"OpSetLocal", []int{1}},
 }
 
 // String outputs a readable format of Instructions.
@@ -195,8 +206,11 @@ func Make(op Opcode, operands ...int) []byte {
 		case 2:
 			// Endianness is the order in which bytes within a word are addressed in computer memory,
 			// counting only byte significance compared to earliness.
-			// A big-endian system stores the most significant byte of a word at the smallest memory address
+			// A big-endian system stores the most significant byte of a word at the smallest memory address.
+			// It is the most idiomatic pick as it is more human-readable.
 			binary.BigEndian.PutUint16(instruction[offset:], uint16(o))
+		case 1:
+			instruction[offset] = byte(o) // or uint8(o)
 		}
 		offset += width
 	}
@@ -213,6 +227,8 @@ func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
 		switch width {
 		case 2:
 			operands[i] = int(ReadUint16(ins[offset:]))
+		case 1:
+			operands[i] = int(ReadUint8(ins[offset:]))
 		}
 
 		offset += width
@@ -223,4 +239,9 @@ func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
 // ReadUint16 reads two bytes from the provided Instructions and returns them as an uint16 in big-endian order.
 func ReadUint16(ins Instructions) uint16 {
 	return binary.BigEndian.Uint16(ins)
+}
+
+// ReadUint8 reads one byte from the provided Instructions and returns them as an uint8 in big-endian order.
+func ReadUint8(ins Instructions) uint8 {
+	return uint8(ins[0])
 }
