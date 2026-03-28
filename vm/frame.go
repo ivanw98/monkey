@@ -11,6 +11,8 @@ type Frame struct {
 	ip int                      // the instruction pointer in this frame for this function.
 }
 
+// NewFrame returns a new Frame for the given compiled function, with the instruction pointer initialised to -1
+// so that the first increment in the execution loop moves it to the first instruction.
 func NewFrame(fn *object.CompiledFunction) *Frame {
 	return &Frame{
 		fn: fn,
@@ -18,6 +20,7 @@ func NewFrame(fn *object.CompiledFunction) *Frame {
 	}
 }
 
+// Instructions returns the bytecode instructions of the function associated with this frame.
 func (f *Frame) Instructions() code.Instructions {
 	return f.fn.Instructions
 }

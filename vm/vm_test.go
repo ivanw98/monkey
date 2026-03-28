@@ -177,6 +177,60 @@ func TestIndexExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestCallingFunctionsWithoutArguments(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input:    `let f = fn() { 5 + 10; }; f();`,
+			expected: 15,
+		},
+		{
+			input:    `let f = fn() { return 15; }; f();`,
+			expected: 15,
+		},
+		{
+			input:    `let f = fn() { return 15; return 10; }; f();`,
+			expected: 15,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
+func TestFunctionsWithoutReturns(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input:    `let f = fn() { }; f();`,
+			expected: vm.Null,
+		},
+		{
+			input: `
+let noReturn = fn() { }; 
+let noReturnAgain = fn () { noReturn(); }; 
+noReturn(); 
+noReturnAgain();
+			`,
+			expected: vm.Null,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
+func TestFirstClassFunctions(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input: `
+let r = fn() {1;};
+let rReturner = fn() { r; };
+rReturner()();
+`,
+			expected: 1,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 func runVmTests(t *testing.T, tests []vmTestCase) {
 	t.Helper()
 

@@ -204,11 +204,48 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+
+		case code.OpCall:
+			// get the compiled function off the stack and check type
+			fn, ok := vm.peekStack().(*object.CompiledFunction)
+			if !ok {
+				return fmt.Errorf("calling non-function")
+			}
+
+			// Create a new frame for the compiledFn.
+			frame := NewFrame(fn)
+			// add the frame to the vm frame stack.
+			vm.pushFrame(frame)
+
+		case code.OpReturnValue:
+			// Get fn return val from stack
+			returnVal := vm.pop()
+			// remove frame from stack
+			vm.popFrame()
+
+			// discard CompiledFunction object
+			vm.pop()
+			if err := vm.push(returnVal); err != nil {
+				return err
+			}
+
+		case code.OpReturn:
+			// no return val so popFrame immediately
+			vm.popFrame()
+			vm.pop() // discard fn
+
+			if err := vm.push(Null); err != nil {
+				return err
+			}
 		}
 
 	}
 
 	return nil
+}
+
+func (vm *VM) peekStack() object.Object {
+	return vm.stack[vm.sp-1]
 }
 
 // LastPoppedStackElem returns the last popped element from the stack, without modifying the stack pointer.
@@ -432,7 +469,7 @@ func (vm *VM) currentFrame() *Frame {
 	return vm.frames[vm.framesIndex-1]
 }
 
-func (vm *VM) pushCurrentFrame(f *Frame) {
+func (vm *VM) pushFrame(f *Frame) {
 	vm.frames[vm.framesIndex] = f
 	vm.framesIndex++
 }
