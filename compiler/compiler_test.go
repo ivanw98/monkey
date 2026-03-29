@@ -511,9 +511,9 @@ func TestFunctionCalls(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 1),
-				code.Make(code.OpCall),
-				code.Make(code.OpPop),
+				code.Make(code.OpConstant, 1), // push the fn on to the stack
+				code.Make(code.OpCall, 0),     // call the function
+				code.Make(code.OpPop),         // discard the function
 			},
 		},
 		{
@@ -526,11 +526,61 @@ func TestFunctionCalls(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 1),
+				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (fn() { 24 })
 				code.Make(code.OpSetGlobal, 0), // pop constants[1] off stack, load onto globals[0]
 				code.Make(code.OpGetGlobal, 0), // push globals[0] back on to the stack
-				code.Make(code.OpCall),
+				code.Make(code.OpCall, 0),
 				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `
+let oneArg = fn(a) { a };
+oneArg(24);
+			`,
+			expectedConstants: []any{
+				[]code.Instructions{
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpReturnValue),
+				},
+				24,
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),  // push function on to the stack
+				code.Make(code.OpSetGlobal, 0), // pop it, store function as globals[0]
+				code.Make(code.OpGetGlobal, 0), // push globals[0] on to stack
+				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (24)
+				code.Make(code.OpCall, 1),      // call the function from the stack
+				code.Make(code.OpPop),          // discard return value, pop it off the stack
+			},
+		},
+		{
+			input: `
+let manyArg = fn(a, b, c) { a; b; c; };
+manyArg(24, 25, 26);
+			`,
+			expectedConstants: []any{
+				[]code.Instructions{
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpPop),
+					code.Make(code.OpGetLocal, 1),
+					code.Make(code.OpPop),
+					code.Make(code.OpGetLocal, 2),
+					code.Make(code.OpReturnValue),
+				},
+				24,
+				25,
+				26,
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),  // push function on to the stack
+				code.Make(code.OpSetGlobal, 0), // pop it, store function as globals[0]
+				code.Make(code.OpGetGlobal, 0), // push globals[0] on to stack
+				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (24)
+				code.Make(code.OpConstant, 2),  // push constants[2] on to the stack (25)
+				code.Make(code.OpConstant, 3),  // push constants[3] on to the stack (26)
+				code.Make(code.OpCall, 3),      // call the function from the stack
+				code.Make(code.OpPop),          // discard return value, pop it off the stack
 			},
 		},
 	}

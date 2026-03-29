@@ -45,7 +45,11 @@ func TestIntegerArithmatic(t *testing.T) {
 		{name: "nested arithmetic handles precedence and unary minus together", input: "(5+10*2+15/3)*2 + -10", expected: 50},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestBooleanExpressions(t *testing.T) {
@@ -78,7 +82,11 @@ func TestBooleanExpressions(t *testing.T) {
 		{name: "bang operator treats null if results as falsy", input: "!(if (false) { 5; })", expected: true},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestConditionals(t *testing.T) {
@@ -95,7 +103,11 @@ func TestConditionals(t *testing.T) {
 		{name: "if treats nested null condition as falsy", input: "if ((if (false) { 10 })) { 10 } else { 20 }", expected: 20},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestGlobalLetStatements(t *testing.T) {
@@ -105,7 +117,11 @@ func TestGlobalLetStatements(t *testing.T) {
 		{name: "global let bindings can reference earlier bindings", input: "let one = 1; let two = one + one; one + two", expected: 3},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestStringExpressions(t *testing.T) {
@@ -127,7 +143,11 @@ func TestStringExpressions(t *testing.T) {
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestArrayLiterals(t *testing.T) {
@@ -137,7 +157,11 @@ func TestArrayLiterals(t *testing.T) {
 		{name: "array literal evaluates element expressions", input: "[1 + 2, 3 * 4, 5 + 6]", expected: []int{3, 12, 11}},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestHashLiterals(t *testing.T) {
@@ -165,7 +189,11 @@ func TestHashLiterals(t *testing.T) {
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestIndexExpressions(t *testing.T) {
@@ -182,7 +210,11 @@ func TestIndexExpressions(t *testing.T) {
 		{name: "hash indexing returns null for empty hashes", input: "{}[0]", expected: vm.Null},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestCallingFunctionsWithoutArguments(t *testing.T) {
@@ -204,7 +236,11 @@ func TestCallingFunctionsWithoutArguments(t *testing.T) {
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestFunctionsWithoutReturns(t *testing.T) {
@@ -226,7 +262,11 @@ noReturnAgain();
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestFirstClassFunctions(t *testing.T) {
@@ -242,7 +282,11 @@ rReturner()();
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
 func TestCallingFunctionsWithBindings(t *testing.T) {
@@ -299,11 +343,94 @@ func TestCallingFunctionsWithBindings(t *testing.T) {
 		},
 	}
 
-	runVmTests(t, tests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
 }
 
-func runVmTests(t *testing.T, tests []vmTestCase) {
-	t.Helper()
+func TestCallingFunctionsWithArgsAndBindings(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			name:     "functions can use args in their local scope",
+			input:    `let identity = fn(a) { a; }; identity(4);`,
+			expected: 4,
+		},
+		{
+			name:     "functions can take multiple arguments and perform operations with them",
+			input:    `let sum = fn(a,b) { a+b; }; sum(1,2);`,
+			expected: 3,
+		},
+		{
+			name: "mix manually created local bindings with args and call multiple times",
+			input: `
+		let sum = fn(a, b) {
+			let c = a + b;
+			c;
+		};
+		sum(1, 2) + sum(3, 4);`,
+			expected: 10,
+		},
+		{
+			name: "mix manually created local bindings with args and call inside another function",
+			input: `
+		let sum = fn(a, b) {
+			let c = a + b;
+			c;
+		};
+		let outer = fn() {
+			sum(1, 2) + sum(3, 4);
+		};
+		outer();
+		`,
+			expected: 10,
+		},
+		{
+			name: "mix global bindings, local bindings, functions and outer functions",
+			input: `
+		let globalNum = 10;
+
+		let sum = fn(a, b) {
+			let c = a + b;
+			c + globalNum;
+		};
+
+		let outer = fn() {
+			sum(1, 2) + sum(3, 4) + globalNum;
+		};
+
+		outer() + globalNum;
+		`,
+			expected: 50,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
+}
+
+func TestCallingFunctionsWithWrongArguments(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			name:     "calling noArgs function with one args",
+			input:    `fn() { 1; }(1);`,
+			expected: `wrong number of arguments: want=0, got=1`,
+		},
+		{
+			name:     "calling args function with no args",
+			input:    `fn(a) { a; }();`,
+			expected: `wrong number of arguments: want=1, got=0`,
+		},
+		{
+			name:     "calling multi args function with one arg",
+			input:    `fn(a, b) { a + b; }(1);`,
+			expected: `wrong number of arguments: want=2, got=1`,
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -317,16 +444,37 @@ func runVmTests(t *testing.T, tests []vmTestCase) {
 
 			virtualMachine := vm.New(comp.Bytecode())
 			err = virtualMachine.Run()
-			if err != nil {
-				t.Fatalf("vm error: %s", err)
+			if err == nil {
+				t.Fatalf("expected VM error but resulted in none.")
 			}
 
-			stackElem := virtualMachine.LastPoppedStackElem()
-
-			testExpectedObject(t, tt.expected, stackElem)
+			if err.Error() != tt.expected {
+				t.Fatalf("wrong VM error: want=%q, got=%q", tt.expected, err)
+			}
 		})
 
 	}
+}
+
+func runVmTest(t *testing.T, testCase vmTestCase) {
+	t.Helper()
+	program := parse(testCase.input)
+
+	comp := compiler.New()
+	err := comp.Compile(program)
+	if err != nil {
+		t.Fatalf("compiler error: %s", err)
+	}
+
+	virtualMachine := vm.New(comp.Bytecode())
+	err = virtualMachine.Run()
+	if err != nil {
+		t.Fatalf("vm error: %s", err)
+	}
+
+	stackElem := virtualMachine.LastPoppedStackElem()
+
+	testExpectedObject(t, testCase.expected, stackElem)
 }
 
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {

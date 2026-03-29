@@ -236,7 +236,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		c.emit(code.OpArray, len(node.Elements))
 
 	case *ast.HashLiteral:
-		keys := []ast.Expression{}
+		var keys []ast.Expression
 		for k := range node.Pairs {
 			keys = append(keys, k)
 		}
@@ -271,6 +271,9 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 	case *ast.FunctionLiteral:
 		c.enterScope()
+		for _, parameter := range node.Parameters {
+			c.symbolTable.Define(parameter.Value)
+		}
 		if err := c.Compile(node.Body); err != nil {
 			return err
 		}
@@ -286,7 +289,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		numLocals := c.symbolTable.numDefinitions
 		// change where emitted instructions are stored when compiling a function.
 		ins := c.leaveScope()
-		compiledFn := &object.CompiledFunction{Instructions: ins, NumLocals: numLocals}
+		compiledFn := &object.CompiledFunction{
+			Instructions:  ins,
+			NumLocals:     numLocals,
+			NumParameters: len(node.Parameters),
+		}
 		c.emit(code.OpConstant, c.addConstant(compiledFn))
 
 	case *ast.ReturnStatement:
@@ -300,7 +307,12 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err := c.Compile(node.Function); err != nil {
 			return err
 		}
-		c.emit(code.OpCall)
+		for _, arg := range node.Args {
+			if err := c.Compile(arg); err != nil {
+				return err
+			}
+		}
+		c.emit(code.OpCall, len(node.Args))
 	}
 
 	return nil

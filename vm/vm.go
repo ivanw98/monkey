@@ -67,7 +67,7 @@ func NewWithGlobalStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
 // Run executes the bytecode instructions stored in the VM and manages the stack using provided constants and opcodes.
 func (vm *VM) Run() error {
 	var ip int                // current instruction pointer position within the active frame
-	var ins code.Instructions // the instruction bytes of the active frame
+	var ins code.Instructions // the raw instruction bytes of the active frame, which contains opcode and operands
 	var op code.Opcode        // the opcode decoded from the current instruction
 
 	// Continue executing as long as the instruction pointer hasn't reached the end of the current frame's instructions.
@@ -84,6 +84,8 @@ func (vm *VM) Run() error {
 
 		switch op {
 		case code.OpConstant:
+			// At position ip you have the opcode (OpConstant).
+			// The operand immediately follows at ip+1. ins[ip+1:] is a slice starting at that
 			constIndex := code.ReadUint16(ins[ip+1:])
 			vm.currentFrame().ip += 2
 			err := vm.push(vm.constants[constIndex])
@@ -206,18 +208,12 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpCall:
-			// get the compiled function off the stack and check type
-			fn, ok := vm.peekStack().(*object.CompiledFunction)
-			if !ok {
-				return fmt.Errorf("calling non-function")
-			}
+			numArgs := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
 
-			// Create a new frame for the compiledFn.
-			frame := NewFrame(fn, vm.sp)
-			// add the frame to the vm frame stack.
-			vm.pushFrame(frame)
-			// save the value of sp before executing a function
-			vm.sp = frame.basePointer + fn.NumLocals // reserve fn.NumLocals amount of slots on the stack.
+			if err := vm.callFunction(int(numArgs)); err != nil {
+				return err
+			}
 
 		case code.OpReturnValue:
 			// Get fn return val from stack
@@ -265,8 +261,8 @@ func (vm *VM) Run() error {
 	return nil
 }
 
-func (vm *VM) peekStack() object.Object {
-	return vm.stack[vm.sp-1]
+func (vm *VM) peekStack(numArgs int) object.Object {
+	return vm.stack[vm.sp-1-numArgs]
 }
 
 // LastPoppedStackElem returns the last popped element from the stack, without modifying the stack pointer.
@@ -498,6 +494,27 @@ func (vm *VM) pushFrame(f *Frame) {
 func (vm *VM) popFrame() *Frame {
 	vm.framesIndex--
 	return vm.frames[vm.framesIndex]
+}
+
+func (vm *VM) callFunction(numArgs int) error {
+	// get the compiled function off the stack and check type
+	fn, ok := vm.peekStack(numArgs).(*object.CompiledFunction)
+	if !ok {
+		return fmt.Errorf("calling non-function")
+	}
+
+	if numArgs != fn.NumParameters {
+		return fmt.Errorf("wrong number of arguments: want=%d, got=%d", fn.NumParameters, numArgs)
+	}
+
+	// Create a new frame for the compiledFn, accounting for numArgs so we don't move basePointer too high.
+	frame := NewFrame(fn, vm.sp-numArgs)
+	// add the frame to the vm frame stack.
+	vm.pushFrame(frame)
+	// save the value of sp before executing a function
+	vm.sp = frame.basePointer + fn.NumLocals // reserve fn.NumLocals amount of slots on the stack.
+
+	return nil
 }
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {
