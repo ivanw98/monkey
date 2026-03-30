@@ -8,6 +8,8 @@ const (
 	LocalScope SymbolScope = "LOCAL"
 	// GlobalScope marks a symbol as defined in the global scope.
 	GlobalScope SymbolScope = "GLOBAL"
+	// BuiltinScope marks a symbol as defined in the builtin scope.
+	BuiltinScope SymbolScope = "BUILTIN"
 )
 
 // Symbol describes a named binding tracked by the compiler.
@@ -50,6 +52,12 @@ func (st *SymbolTable) Resolve(name string) (Symbol, bool) {
 		return st.Outer.Resolve(name)
 	}
 	return obj, ok
+}
+
+func (st *SymbolTable) DefineBuiltin(index int, name string) Symbol {
+	sym := Symbol{Name: name, Index: index, Scope: BuiltinScope}
+	st.store[name] = sym
+	return sym
 }
 
 // NewSymbolTable creates a new top-level symbol table.

@@ -25,6 +25,7 @@ type Definition struct {
 
 const (
 	// OpConstant retrieves the constant using the operand as an index and pushes it on to the stack.
+	// only literal scalar values (integers, strings) and compiled functions are stored in the constants pool.
 	OpConstant Opcode = iota
 
 	// OpAdd instructs the VM to pop the two topmost elements off the stack, add them together and push the result back.
@@ -103,6 +104,9 @@ const (
 
 	// OpSetLocal instructs the VM to create a local binding.
 	OpSetLocal
+
+	// OpGetBuiltin allows the VM to detect built-in functions, the operand in this instruction is the index of the referenced function in object.Builtins.
+	OpGetBuiltin
 )
 
 var definitions = map[Opcode]*Definition{
@@ -132,6 +136,7 @@ var definitions = map[Opcode]*Definition{
 	OpReturn:        {"OpReturn", []int{}},
 	OpGetLocal:      {"OpGetLocal", []int{1}},
 	OpSetLocal:      {"OpSetLocal", []int{1}},
+	OpGetBuiltin:    {"OpGetBuiltin", []int{1}},
 }
 
 // String outputs a readable format of Instructions.

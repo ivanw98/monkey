@@ -662,6 +662,43 @@ func TestLetStatementScopes(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestBuiltins(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             `len([]); push([], 1);`,
+			expectedConstants: []any{1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpGetBuiltin, 0),
+				code.Make(code.OpArray, 0),
+				code.Make(code.OpCall, 1), // one argument for len
+				code.Make(code.OpPop),
+				code.Make(code.OpGetBuiltin, 4),
+				code.Make(code.OpArray, 0),
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpCall, 2), // two arguments for push
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `fn() { len([]) }`,
+			expectedConstants: []any{
+				[]code.Instructions{
+					code.Make(code.OpGetBuiltin, 0),
+					code.Make(code.OpArray, 0),
+					code.Make(code.OpCall, 1),
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0), // the compiledFn
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 // runCompilerTests takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
