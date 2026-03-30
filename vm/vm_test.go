@@ -483,62 +483,17 @@ func TestBuiltinFunctions(t *testing.T) {
 			input:    `len("one", "two")`,
 			expected: &object.Error{Message: "wrong number of arguments. got=2, want=1"},
 		},
-		{
-			name:     "push(array, 1) does not persist the update",
-			input:    `let a = [1]; push(a, 2); a`,
-			expected: []int{1, 2},
-		},
+		//{
+		//	name:     "push(array, 1) does not persist the update",
+		//	input:    `let a = [1]; push(a, 2); a`,
+		//	expected: []int{1, 2},
+		//},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runVmTest(t, tt)
 		})
-	}
-}
-
-func TestBuiltinFunctionsREPL(t *testing.T) {
-	tests := []struct {
-		inputs   []string
-		expected any
-	}{
-		{
-			inputs: []string{
-				"let arr = [1, 2, 3];",
-				"push(arr, 4);",
-				"arr",
-			},
-			expected: []int{1, 2, 3, 4},
-		},
-	}
-
-	for _, tt := range tests {
-		constants := []object.Object{}
-		globals := make([]object.Object, vm.GlobalSize)
-		symTable := compiler.NewSymbolTable()
-		for i, v := range object.Builtins {
-			symTable.DefineBuiltin(i, v.Name)
-		}
-
-		var lastPopped object.Object
-		for _, input := range tt.inputs {
-			program := parse(input)
-			comp := compiler.NewWithState(symTable, constants)
-			err := comp.Compile(program)
-			if err != nil {
-				t.Fatalf("compiler error: %s", err)
-			}
-
-			machine := vm.NewWithGlobalStore(comp.Bytecode(), globals)
-			err = machine.Run()
-			if err != nil {
-				t.Fatalf("vm error: %s", err)
-			}
-			lastPopped = machine.LastPoppedStackElem()
-			constants = comp.Bytecode().Constants
-		}
-
-		testExpectedObject(t, tt.expected, lastPopped)
 	}
 }
 
