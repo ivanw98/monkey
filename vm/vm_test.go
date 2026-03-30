@@ -456,6 +456,92 @@ func TestCallingFunctionsWithWrongArguments(t *testing.T) {
 	}
 }
 
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			name:     "valid len() on empty string",
+			input:    `len("")`,
+			expected: 0,
+		},
+		{
+			name:     "valid len() on single word string",
+			input:    `len("four")`,
+			expected: 4,
+		},
+		{
+			name:     "valid len() on space separated string",
+			input:    `len("Hello World!")`,
+			expected: 12,
+		},
+		{
+			name:     "invalid len() on number",
+			input:    `len(1)`,
+			expected: &object.Error{Message: "argument to `len` not supported, got INTEGER"},
+		},
+		{
+			name:     "invalid len() on string: wrong number of args",
+			input:    `len("one", "two")`,
+			expected: &object.Error{Message: "wrong number of arguments. got=2, want=1"},
+		},
+		{
+			name:     "push(array, 1) does not persist the update",
+			input:    `let a = [1]; push(a, 2); a`,
+			expected: []int{1, 2},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
+}
+
+func TestBuiltinFunctionsREPL(t *testing.T) {
+	tests := []struct {
+		inputs   []string
+		expected any
+	}{
+		{
+			inputs: []string{
+				"let arr = [1, 2, 3];",
+				"push(arr, 4);",
+				"arr",
+			},
+			expected: []int{1, 2, 3, 4},
+		},
+	}
+
+	for _, tt := range tests {
+		constants := []object.Object{}
+		globals := make([]object.Object, vm.GlobalSize)
+		symTable := compiler.NewSymbolTable()
+		for i, v := range object.Builtins {
+			symTable.DefineBuiltin(i, v.Name)
+		}
+
+		var lastPopped object.Object
+		for _, input := range tt.inputs {
+			program := parse(input)
+			comp := compiler.NewWithState(symTable, constants)
+			err := comp.Compile(program)
+			if err != nil {
+				t.Fatalf("compiler error: %s", err)
+			}
+
+			machine := vm.NewWithGlobalStore(comp.Bytecode(), globals)
+			err = machine.Run()
+			if err != nil {
+				t.Fatalf("vm error: %s", err)
+			}
+			lastPopped = machine.LastPoppedStackElem()
+			constants = comp.Bytecode().Constants
+		}
+
+		testExpectedObject(t, tt.expected, lastPopped)
+	}
+}
+
 func runVmTest(t *testing.T, testCase vmTestCase) {
 	t.Helper()
 	program := parse(testCase.input)
@@ -547,6 +633,16 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	case *object.Null:
 		if actual != vm.Null {
 			t.Errorf("object is not Null: %T (%+v)", actual, actual)
+		}
+
+	case *object.Error:
+		errorObject, ok := actual.(*object.Error)
+		if !ok {
+			t.Errorf("object is not Error: %T (%+v)", actual, actual)
+			return
+		}
+		if errorObject.Message != expected.Message {
+			t.Errorf("wrong error message. expected=%q, got=%q", expected.Message, errorObject.Message)
 		}
 	}
 }

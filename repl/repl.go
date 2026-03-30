@@ -22,6 +22,9 @@ func Start(in io.Reader, out io.Writer) error {
 	constants := []object.Object{}
 	globals := make([]object.Object, vm.GlobalSize)
 	symTable := compiler.NewSymbolTable()
+	for i, v := range object.Builtins {
+		symTable.DefineBuiltin(i, v.Name)
+	}
 
 	for {
 		_, err := fmt.Fprintf(out, PROMPT)
@@ -62,6 +65,8 @@ func Start(in io.Reader, out io.Writer) error {
 			}
 			continue
 		}
+
+		constants = comp.Bytecode().Constants
 
 		lastPopped := machine.LastPoppedStackElem()
 		_, err = io.WriteString(out, lastPopped.Inspect())
