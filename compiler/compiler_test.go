@@ -12,8 +12,11 @@ import (
 )
 
 type compilerTestCase struct {
-	input                string
-	expectedConstants    []any
+	input string
+	// expectedConstants is the constant pool, a flat list of values the bytecode refers to by index
+	expectedConstants []any
+	// expectedInstructions is the bytecode stream from the top-level scope being compiled
+	// This is the sequence of opcodes the VM will execute directly when it starts running the program.
 	expectedInstructions []code.Instructions
 }
 
@@ -691,6 +694,129 @@ func TestBuiltins(t *testing.T) {
 			},
 			expectedInstructions: []code.Instructions{
 				code.Make(code.OpClosure, 0, 0), // the compiledFn
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
+func TestClosures(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input: `
+		fn(a) {
+			fn(b) {
+				a + b
+			}
+		}
+`,
+			// - `a` is a parameter of the outer function, so from the inner function's perspective, it's a free variable captured from the enclosing scope → OpGetFree.
+			// - `b` is the inner function's own parameter, which lives in its local frame → OpGetLocal.
+			// OpReturnValue represents returning a + b
+			expectedConstants: []any{
+				[]code.Instructions{
+					code.Make(code.OpGetFree, 0),
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue),
+				},
+				// - `a` is the outer function's own parameter, which lives in its local frame
+				// OpReturnValue represents returning the closure (whatever is on top of the stack)
+				[]code.Instructions{
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpClosure, 0, 1), // constant 0 is inner fn, 1 free var
+					code.Make(code.OpReturnValue),
+				},
+			},
+			// Why OpClosure, 1, 0:
+			//  - 1 — the constant-pool index of the outer *CompiledFunction. The constants pool is built bottom-up:
+			//    - index 0 = the inner function fn(b) { a + b } (compiled first, since it's nested inside)
+			//    - index 1 = the outer function fn(a) { ... } (compiled after its inner body was emitted)
+			//  - 0 — the outer function captures zero free variables. Its only identifier, a, is its own parameter (a local), so there's nothing from an
+			//  enclosing scope to capture.
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpClosure, 1, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `fn(a) { fn(b) { fn(c) { a+b+c } } };`,
+			expectedConstants: []any{
+				[]code.Instructions{
+					code.Make(code.OpGetFree, 0),
+					code.Make(code.OpGetFree, 1),
+					code.Make(code.OpAdd),
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue),
+				},
+				[]code.Instructions{
+					code.Make(code.OpGetFree, 0),
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpClosure, 0, 2), // the innermost compiledFn sits at index 0, and there are 2 free vars
+					code.Make(code.OpReturnValue),
+				},
+				[]code.Instructions{
+					code.Make(code.OpGetLocal, 0),
+					code.Make(code.OpClosure, 1, 1), // the second compiledFn sits at index 1 and there is 1 free vars
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpClosure, 2, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `
+			let global = 55;
+			fn() {
+				let a = 66;
+				fn() {
+					let b = 77;
+					fn() {
+						let c = 88;
+						global + a + b + c;
+					}
+				}
+			}
+			`,
+			expectedConstants: []any{
+				55, 66, 77, 88,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 3), // 3 literals preceding the 88 (77, 66, 55)
+					code.Make(code.OpSetLocal, 0),
+					code.Make(code.OpGetGlobal, 0), // get global (no reason to treat as free var)
+					code.Make(code.OpGetFree, 0),   // get a
+					code.Make(code.OpAdd),          // global + a => result back on stack
+					code.Make(code.OpGetFree, 1),   // get b
+					code.Make(code.OpAdd),          // (global + a) + b => result back on stack
+					code.Make(code.OpGetLocal, 0),  // get c
+					code.Make(code.OpAdd),          // ((global + a) + b) + c => result back on stack
+					code.Make(code.OpReturnValue),
+				},
+				[]code.Instructions{
+					code.Make(code.OpConstant, 2),   // 2 literals preceding the 77 (66, 55)
+					code.Make(code.OpSetLocal, 0),   // bind 77 to local scope
+					code.Make(code.OpGetFree, 0),    // get a
+					code.Make(code.OpGetLocal, 0),   // fetch 77 to pass through to the closure
+					code.Make(code.OpClosure, 4, 2), // 4 literals preceding the closure (88, 77, 66, 55)
+					code.Make(code.OpReturnValue),
+				},
+				[]code.Instructions{
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpSetLocal, 0),   // bind the 66 to local scope
+					code.Make(code.OpGetLocal, 0),   // fetch 66
+					code.Make(code.OpClosure, 5, 1), // 5 literals preceding the closure (88, 77, 66, 55)
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0), // the 55
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpClosure, 6, 0), // the top level scope has the function at index 6 with 0 free vars
 				code.Make(code.OpPop),
 			},
 		},

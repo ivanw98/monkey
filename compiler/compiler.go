@@ -128,6 +128,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return fmt.Errorf("unknown operator %s", node.Operator)
 		}
 
+	// Integer literals are added to the pool the moment they're encountered, top-down
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(integer))
@@ -222,10 +223,6 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 		c.loadSymbol(symbol)
 
-	case *ast.StringLiteral:
-		str := &object.String{Value: node.Value}
-		c.emit(code.OpConstant, c.addConstant(str))
-
 	case *ast.ArrayLiteral:
 		for _, element := range node.Elements {
 			err := c.Compile(element)
@@ -268,7 +265,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 		c.emit(code.OpIndex)
-
+	// It's essentially a depth-first, post-order process for functions
 	case *ast.FunctionLiteral:
 		c.enterScope()
 		for _, parameter := range node.Parameters {
@@ -286,9 +283,13 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.emit(code.OpReturn)
 		}
 
+		freeSymbols := c.symbolTable.FreeSymbols
 		numLocals := c.symbolTable.numDefinitions
 		// change where emitted instructions are stored when compiling a function.
 		ins := c.leaveScope()
+		for _, f := range freeSymbols {
+			c.loadSymbol(f)
+		}
 		compiledFn := &object.CompiledFunction{
 			Instructions:  ins,
 			NumLocals:     numLocals,
@@ -296,7 +297,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 		fnIndex := c.addConstant(compiledFn)
-		c.emit(code.OpClosure, fnIndex, 0)
+		c.emit(code.OpClosure, fnIndex, len(freeSymbols))
 
 	case *ast.ReturnStatement:
 		if err := c.Compile(node.ReturnValue); err != nil {
@@ -446,5 +447,7 @@ func (c *Compiler) loadSymbol(s Symbol) {
 		c.emit(code.OpGetLocal, s.Index)
 	case BuiltinScope:
 		c.emit(code.OpGetBuiltin, s.Index)
+	case FreeScope:
+		c.emit(code.OpGetFree, s.Index)
 	}
 }

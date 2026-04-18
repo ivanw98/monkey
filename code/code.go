@@ -99,7 +99,7 @@ const (
 	// OpReturn instructs the VM to return from a function with no return value (or an implicit vm.Null).
 	OpReturn
 
-	// OpGetLocal instructs the VM to retrieve a local binding.
+	// OpGetLocal instructs the VM to retrieve a local binding and put on the stack.
 	OpGetLocal
 
 	// OpSetLocal instructs the VM to create a local binding.
@@ -108,8 +108,11 @@ const (
 	// OpGetBuiltin allows the VM to detect built-in functions, the operand in this instruction is the index of the referenced function in object.Builtins.
 	OpGetBuiltin
 
-	// OpClosure is the instruction sent by the compiler to the VM to wrap the *object.CompiledFunction in an *object.Closure
+	// OpClosure is the instruction sent by the compiler to the VM to wrap the *object.CompiledFunction in an *object.Closure.
 	OpClosure
+
+	// OpGetFree instructs the VM to fetch a free variable in the object.Closure.Free field and put on the stack.
+	OpGetFree
 )
 
 var definitions = map[Opcode]*Definition{
@@ -141,6 +144,7 @@ var definitions = map[Opcode]*Definition{
 	OpSetLocal:      {"OpSetLocal", []int{1}},
 	OpGetBuiltin:    {"OpGetBuiltin", []int{1}},
 	OpClosure:       {"OpClosure", []int{2, 1}}, // 2 operands, constantIndex (where we can find it in the constant pool) and how many free variables sit on the stack
+	OpGetFree:       {"OpGetFree", []int{1}},
 }
 
 // String outputs a readable format of Instructions.
