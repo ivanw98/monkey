@@ -585,6 +585,94 @@ func TestClosures(t *testing.T) {
 	}
 }
 
+func TestRecursiveFunctions(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			name: "call a simple recursive function",
+			input: `
+			let countDown = fn(x) {
+				if (x == 0) {
+					return 0;
+				} else {
+					countDown(x - 1);
+				}
+			};
+			countDown(1);
+`,
+			expected: 0,
+		},
+		{
+			name: "call a recursive function inside a wrapper",
+			input: `
+		let countDown = fn(x) {
+			if (x == 0) {
+				return 0;
+			} else {
+				countDown(x - 1);
+			}
+		};
+		let wrapper = fn() {
+			countDown(1);
+		};
+		wrapper();
+		`,
+			expected: 0,
+		},
+		{
+			name: "represent higher order map function",
+			input: `
+			let wrapper = fn() {
+				let countDown = fn(x) {
+					if (x == 0) {
+						return 0;
+					} else {
+						countDown(x - 1);
+					}
+				};
+				countDown(1);
+			};
+			wrapper();
+			`,
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
+}
+
+func TestRecursiveFibonacci(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			name: "showcase recursion using Fibonacci",
+			input: `
+			let fib = fn(x) {
+				if (x == 0) { 
+					return 0;
+				} else {
+					if (x == 1) { 
+						return 1; 
+					} else {
+						return fib(x-1)+fib(x-2);
+					}
+				}
+			}
+			fib(15)
+			`,
+			expected: 610,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runVmTest(t, tt)
+		})
+	}
+}
+
 func runVmTest(t *testing.T, testCase vmTestCase) {
 	t.Helper()
 	program := parse(testCase.input)
