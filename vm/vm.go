@@ -280,10 +280,22 @@ func (vm *VM) Run() error {
 			//The vm.currentFrame().ip += 3 then advances the instruction pointer past all 3 operand bytes (the main fetch loop advances past the opcode
 			//itself)
 			constIdx := code.ReadUint16(ins[ip+1:])
-			code.ReadUint8(ins[ip+3:])
+			numFree := code.ReadUint8(ins[ip+3:])
 			vm.currentFrame().ip += 3
 
-			if err := vm.pushClosure(int(constIdx)); err != nil {
+			if err := vm.pushClosure(int(constIdx), int(numFree)); err != nil {
+				return err
+			}
+
+		case code.OpGetFree:
+			// ins[ip] = OpGetFree opcode  (1 byte)
+			// ins[ip+1] identifies which free variable to retrieve
+			freeIdx := code.ReadUint8(ins[ip+1:])
+			// advance the instruction pointer past the 1 operand byte
+			vm.currentFrame().ip += 1
+
+			currentClosure := vm.currentFrame().cl
+			if err := vm.push(currentClosure.Free[freeIdx]); err != nil {
 				return err
 			}
 		}
@@ -574,14 +586,23 @@ func (vm *VM) callBuiltin(builtin *object.Builtin, numArgs int) error {
 	return nil
 }
 
-func (vm *VM) pushClosure(constIndex int) error {
+func (vm *VM) pushClosure(constIndex int, freeVariableCount int) error {
 	constant := vm.constants[constIndex]
 	fn, ok := constant.(*object.CompiledFunction)
 	if !ok {
 		return fmt.Errorf("not a function: %+v", constant)
 	}
 
-	closure := &object.Closure{Fn: fn}
+	freeVariables := make([]object.Object, freeVariableCount)
+
+	// all free variables are already on the stack, so they sit just below sp
+	for i := 0; i < freeVariableCount; i++ {
+		freeVariables[i] = vm.stack[vm.sp-freeVariableCount+i]
+	}
+
+	// once we have collected the freeVariables, we pop them off the stack
+	vm.sp = vm.sp - freeVariableCount
+	closure := &object.Closure{Fn: fn, Free: freeVariables}
 	return vm.push(closure)
 }
 
