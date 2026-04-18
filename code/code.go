@@ -107,6 +107,9 @@ const (
 
 	// OpGetBuiltin allows the VM to detect built-in functions, the operand in this instruction is the index of the referenced function in object.Builtins.
 	OpGetBuiltin
+
+	// OpClosure is the instruction sent by the compiler to the VM to wrap the *object.CompiledFunction in an *object.Closure
+	OpClosure
 )
 
 var definitions = map[Opcode]*Definition{
@@ -137,6 +140,7 @@ var definitions = map[Opcode]*Definition{
 	OpGetLocal:      {"OpGetLocal", []int{1}},
 	OpSetLocal:      {"OpSetLocal", []int{1}},
 	OpGetBuiltin:    {"OpGetBuiltin", []int{1}},
+	OpClosure:       {"OpClosure", []int{2, 1}}, // 2 operands, constantIndex (where we can find it in the constant pool) and how many free variables sit on the stack
 }
 
 // String outputs a readable format of Instructions.
@@ -172,6 +176,8 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	case 2:
+		return fmt.Sprintf("%s %d %d", def.Name, operands[0], operands[1])
 	}
 
 	return fmt.Sprintf("ERROR: unhandled operandCount for %s\n", def.Name)

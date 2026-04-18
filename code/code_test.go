@@ -30,6 +30,18 @@ func TestMake(t *testing.T) {
 			operands: []int{255},
 			expected: []byte{byte(code.OpGetLocal), 255},
 		},
+		{
+			name:     "OpConstant",
+			op:       code.OpClosure,
+			operands: []int{65534, 255},
+			// OpClosure takes two operands with widths {2, 1} — a 2-byte operand followed by a 1-byte operand, encoded big-endian.
+			// - Operand 1 = 65534 → 2 bytes, big-endian:
+			// - 65534 in hex is 0xFFFE
+			// - High byte first: 0xFF = 255, then 0xFE = 254
+			// - Operand 2 = 255 → 1 byte:
+			// - 0xFF = 255
+			expected: []byte{byte(code.OpClosure), 255, 254, 255},
+		},
 	}
 
 	for _, tt := range tests {

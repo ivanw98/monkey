@@ -24,6 +24,7 @@ const (
 	ARRAY_OBJ             = "ARRAY"
 	HASH_OBJ              = "HASH"
 	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION_OBJ"
+	CLOSURE_OBJ           = "CLOUSRE"
 )
 
 // BuiltinFunction represents a function type that accepts a variable number of Object arguments and returns an Object.
@@ -101,10 +102,17 @@ type Error struct {
 type Null struct {
 }
 
+// CompiledFunction holds the compiled bytecode of a function along with the number of local bindings and parameters it expects
 type CompiledFunction struct {
 	Instructions  code.Instructions
 	NumLocals     int
 	NumParameters int
+}
+
+// Closure wraps a CompiledFunction, along with its captured free variables.
+type Closure struct {
+	Fn   *CompiledFunction
+	Free []Object
 }
 
 // Inspect returns a string representation of the Integer's value.
@@ -277,4 +285,14 @@ func (cf *CompiledFunction) Type() ObjectType {
 // Inspect returns a string representation of a CompiledFunction object, including its memory address.
 func (cf *CompiledFunction) Inspect() string {
 	return fmt.Sprintf("CompiledFunction[%p]", cf)
+}
+
+// Type returns the CLOSURE_OBJ object type.
+func (c *Closure) Type() ObjectType {
+	return CLOSURE_OBJ
+}
+
+// Inspect returns a string representation of a Closure object, including its memory address.
+func (c *Closure) Inspect() string {
+	return fmt.Sprintf("Closure[%p]", c)
 }

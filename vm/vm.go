@@ -43,7 +43,10 @@ type VM struct {
 func New(bytecode *compiler.Bytecode) *VM {
 	// pre-allocate frames slice
 	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
-	mainFrame := NewFrame(mainFn, 0)
+	mainClosure := &object.Closure{
+		Fn: mainFn,
+	}
+	mainFrame := NewFrame(mainClosure, 0)
 
 	frames := make([]*Frame, MaxFrames)
 	frames[0] = mainFrame
@@ -262,6 +265,25 @@ func (vm *VM) Run() error {
 			definition := object.Builtins[builtinIndex]
 
 			if err := vm.push(definition.Builtin); err != nil {
+				return err
+			}
+
+		case code.OpClosure:
+			//ins[ip]     = OpClosure opcode      (1 byte)
+			//ins[ip+1]   = constant index high   ┐
+			//ins[ip+2]   = constant index low    ┘ uint16 (2 bytes)
+			//ins[ip+3]   = number of free vars     uint8  (1 byte)
+			//
+			//- ins[ip+1:] — slices from the first operand byte, so ReadUint16 consumes the two bytes of the constant index.
+			//- ins[ip+3:] — skips past that uint16, so ReadUint8 reads the single byte for the free-variable count.
+			//
+			//The vm.currentFrame().ip += 3 then advances the instruction pointer past all 3 operand bytes (the main fetch loop advances past the opcode
+			//itself)
+			constIdx := code.ReadUint16(ins[ip+1:])
+			code.ReadUint8(ins[ip+3:])
+			vm.currentFrame().ip += 3
+
+			if err := vm.pushClosure(int(constIdx)); err != nil {
 				return err
 			}
 		}
@@ -506,17 +528,17 @@ func (vm *VM) popFrame() *Frame {
 	return vm.frames[vm.framesIndex]
 }
 
-func (vm *VM) callFunction(fn *object.CompiledFunction, numArgs int) error {
-	if numArgs != fn.NumParameters {
-		return fmt.Errorf("wrong number of arguments: want=%d, got=%d", fn.NumParameters, numArgs)
+func (vm *VM) callClosure(cl *object.Closure, numArgs int) error {
+	if numArgs != cl.Fn.NumParameters {
+		return fmt.Errorf("wrong number of arguments: want=%d, got=%d", cl.Fn.NumParameters, numArgs)
 	}
 
 	// Create a new frame for the compiledFn, accounting for numArgs so we don't move basePointer too high.
-	frame := NewFrame(fn, vm.sp-numArgs)
+	frame := NewFrame(cl, vm.sp-numArgs)
 	// add the frame to the vm frame stack.
 	vm.pushFrame(frame)
 	// save the value of sp before executing a function
-	vm.sp = frame.basePointer + fn.NumLocals // reserve fn.NumLocals amount of slots on the stack.
+	vm.sp = frame.basePointer + cl.Fn.NumLocals // reserve fn.NumLocals amount of slots on the stack.
 
 	return nil
 }
@@ -525,8 +547,8 @@ func (vm *VM) executeCall(numArgs int) error {
 	// get the compiled function off the stack and check type
 	callee := vm.peekStack(numArgs)
 	switch callee := callee.(type) {
-	case *object.CompiledFunction:
-		return vm.callFunction(callee, numArgs)
+	case *object.Closure:
+		return vm.callClosure(callee, numArgs)
 	case *object.Builtin:
 		return vm.callBuiltin(callee, numArgs)
 	default:
@@ -550,6 +572,17 @@ func (vm *VM) callBuiltin(builtin *object.Builtin, numArgs int) error {
 	}
 
 	return nil
+}
+
+func (vm *VM) pushClosure(constIndex int) error {
+	constant := vm.constants[constIndex]
+	fn, ok := constant.(*object.CompiledFunction)
+	if !ok {
+		return fmt.Errorf("not a function: %+v", constant)
+	}
+
+	closure := &object.Closure{Fn: fn}
+	return vm.push(closure)
 }
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {

@@ -449,7 +449,7 @@ func TestFunctions(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpClosure, 2, 0), // the object.CompiledFunction object
 				code.Make(code.OpPop),
 			},
 		},
@@ -466,7 +466,7 @@ func TestFunctions(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpClosure, 2, 0), // the object.CompiledFunction object
 				code.Make(code.OpPop),
 			},
 		},
@@ -483,7 +483,7 @@ func TestFunctions(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 2), // the object.CompiledFunction object
+				code.Make(code.OpClosure, 2, 0), // the object.CompiledFunction object
 				code.Make(code.OpPop),
 			},
 		},
@@ -491,7 +491,7 @@ func TestFunctions(t *testing.T) {
 			input:             `fn() { }`,
 			expectedConstants: []any{[]code.Instructions{code.Make(code.OpReturn)}},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 0),
+				code.Make(code.OpClosure, 0, 0),
 				code.Make(code.OpPop),
 			},
 		},
@@ -511,9 +511,9 @@ func TestFunctionCalls(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 1), // push the fn on to the stack
-				code.Make(code.OpCall, 0),     // call the function
-				code.Make(code.OpPop),         // discard the function
+				code.Make(code.OpClosure, 1, 0), // push the fn on to the stack
+				code.Make(code.OpCall, 0),       // call the function
+				code.Make(code.OpPop),           // discard the function
 			},
 		},
 		{
@@ -526,9 +526,9 @@ func TestFunctionCalls(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (fn() { 24 })
-				code.Make(code.OpSetGlobal, 0), // pop constants[1] off stack, load onto globals[0]
-				code.Make(code.OpGetGlobal, 0), // push globals[0] back on to the stack
+				code.Make(code.OpClosure, 1, 0), // push constants[1] on to the stack (fn() { 24 })
+				code.Make(code.OpSetGlobal, 0),  // pop constants[1] off stack, load onto globals[0]
+				code.Make(code.OpGetGlobal, 0),  // push globals[0] back on to the stack
 				code.Make(code.OpCall, 0),
 				code.Make(code.OpPop),
 			},
@@ -546,12 +546,12 @@ oneArg(24);
 				24,
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 0),  // push function on to the stack
-				code.Make(code.OpSetGlobal, 0), // pop it, store function as globals[0]
-				code.Make(code.OpGetGlobal, 0), // push globals[0] on to stack
-				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (24)
-				code.Make(code.OpCall, 1),      // call the function from the stack
-				code.Make(code.OpPop),          // discard return value, pop it off the stack
+				code.Make(code.OpClosure, 0, 0), // push function on to the stack
+				code.Make(code.OpSetGlobal, 0),  // pop it, store function as globals[0]
+				code.Make(code.OpGetGlobal, 0),  // push globals[0] on to stack
+				code.Make(code.OpConstant, 1),   // push constants[1] on to the stack (24)
+				code.Make(code.OpCall, 1),       // call the function from the stack
+				code.Make(code.OpPop),           // discard return value, pop it off the stack
 			},
 		},
 		{
@@ -573,14 +573,14 @@ manyArg(24, 25, 26);
 				26,
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 0),  // push function on to the stack
-				code.Make(code.OpSetGlobal, 0), // pop it, store function as globals[0]
-				code.Make(code.OpGetGlobal, 0), // push globals[0] on to stack
-				code.Make(code.OpConstant, 1),  // push constants[1] on to the stack (24)
-				code.Make(code.OpConstant, 2),  // push constants[2] on to the stack (25)
-				code.Make(code.OpConstant, 3),  // push constants[3] on to the stack (26)
-				code.Make(code.OpCall, 3),      // call the function from the stack
-				code.Make(code.OpPop),          // discard return value, pop it off the stack
+				code.Make(code.OpClosure, 0, 0), // push function on to the stack
+				code.Make(code.OpSetGlobal, 0),  // pop it, store function as globals[0]
+				code.Make(code.OpGetGlobal, 0),  // push globals[0] on to stack
+				code.Make(code.OpConstant, 1),   // push constants[1] on to the stack (24)
+				code.Make(code.OpConstant, 2),   // push constants[2] on to the stack (25)
+				code.Make(code.OpConstant, 3),   // push constants[3] on to the stack (26)
+				code.Make(code.OpCall, 3),       // call the function from the stack
+				code.Make(code.OpPop),           // discard return value, pop it off the stack
 			},
 		},
 	}
@@ -605,7 +605,7 @@ func TestLetStatementScopes(t *testing.T) {
 			expectedInstructions: []code.Instructions{
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpSetGlobal, 0),
-				code.Make(code.OpConstant, 1),
+				code.Make(code.OpClosure, 1, 0),
 				code.Make(code.OpPop),
 			},
 		},
@@ -626,7 +626,7 @@ func TestLetStatementScopes(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 1),
+				code.Make(code.OpClosure, 1, 0),
 				code.Make(code.OpPop),
 			},
 		},
@@ -653,7 +653,7 @@ func TestLetStatementScopes(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 2),
+				code.Make(code.OpClosure, 2, 0),
 				code.Make(code.OpPop),
 			},
 		},
@@ -690,7 +690,7 @@ func TestBuiltins(t *testing.T) {
 				},
 			},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 0), // the compiledFn
+				code.Make(code.OpClosure, 0, 0), // the compiledFn
 				code.Make(code.OpPop),
 			},
 		},
