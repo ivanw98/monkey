@@ -825,6 +825,72 @@ func TestClosures(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestRecursiveFunctions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input: `let countDown = fn(x) { countDown(x-1); }; countDown(2);`,
+			expectedConstants: []any{
+				1, // the 1 inside the body of fn(x) e.g. x - 1
+				[]code.Instructions{
+					code.Make(code.OpCurrentClosure),
+					code.Make(code.OpGetLocal, 0), // push x
+					code.Make(code.OpConstant, 0), // push 1
+					code.Make(code.OpSub),         // subtract and put on stack
+					code.Make(code.OpCall, 1),     // call the closure with 1 arg
+					code.Make(code.OpReturnValue),
+				},
+				2, // the 2 in countdown param e.g. countdown(2)
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpClosure, 1, 0), // the literal `1` already occupies index 0, so the function can be found at index 1 in constant pool, 0 free vars
+				code.Make(code.OpSetGlobal, 0),  // bind countdown to global slot 0
+				code.Make(code.OpGetGlobal, 0),  // push countdown onto the stack
+				code.Make(code.OpConstant, 2),   // push constant at index 2 onto the stack (the 1 in the fn argument)
+				code.Make(code.OpCall, 1),       // call with 1 arg
+				code.Make(code.OpPop),           // discard the return value
+			},
+		},
+		{
+			input: `
+			let wrapper = fn() {
+				let countDown = fn(x) { countDown(x - 1); };
+				countDown(2);
+			};
+			wrapper();
+			`,
+			expectedConstants: []any{
+				1, // the 1 is at index 0
+				[]code.Instructions{ // countDown() is at index 1
+					code.Make(code.OpCurrentClosure),
+					code.Make(code.OpGetLocal, 0), // push x onto stack
+					code.Make(code.OpConstant, 0), // push 1 onto stack
+					code.Make(code.OpSub),
+					code.Make(code.OpCall, 1),
+					code.Make(code.OpReturnValue),
+				},
+				2, // the 2 is at index 2
+				[]code.Instructions{ // the outer fn (wrapper) is at index 3
+					code.Make(code.OpClosure, 1, 0), // wrap the fn at index 1 (countdown)
+					code.Make(code.OpSetLocal, 0),   // bind to local countDown
+					code.Make(code.OpGetLocal, 0),   // push countDown onto the stack
+					code.Make(code.OpConstant, 2),   // push the 2 at index 2
+					code.Make(code.OpCall, 1),       // call countDown(2)
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpClosure, 3, 0), // wrapper lives in index 3
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				code.Make(code.OpCall, 0),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 // runCompilerTests takes Monkey code as input, parses it to produce an AST, passes it to the compiler and make assertions.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()

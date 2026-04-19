@@ -298,6 +298,12 @@ func (vm *VM) Run() error {
 			if err := vm.push(currentClosure.Free[freeIdx]); err != nil {
 				return err
 			}
+
+		case code.OpCurrentClosure:
+			currentClosure := vm.currentFrame().cl
+			if err := vm.push(currentClosure); err != nil {
+				return err
+			}
 		}
 
 	}

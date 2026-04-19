@@ -269,9 +269,14 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 		c.emit(code.OpIndex)
+
 	// It's essentially a depth-first, post-order process for functions
 	case *ast.FunctionLiteral:
 		c.enterScope()
+
+		if node.Name != "" {
+			c.symbolTable.DefineFunctionName(node.Name)
+		}
 		for _, parameter := range node.Parameters {
 			c.symbolTable.Define(parameter.Value)
 		}
@@ -453,5 +458,7 @@ func (c *Compiler) loadSymbol(s Symbol) {
 		c.emit(code.OpGetBuiltin, s.Index)
 	case FreeScope:
 		c.emit(code.OpGetFree, s.Index)
+	case FunctionScope:
+		c.emit(code.OpCurrentClosure)
 	}
 }

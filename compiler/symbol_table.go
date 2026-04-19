@@ -12,6 +12,8 @@ const (
 	BuiltinScope SymbolScope = "BUILTIN"
 	// FreeScope marks a symbol as a free variable to be resolved in a closure.
 	FreeScope SymbolScope = "FREE"
+	// FunctionScope marks a symbol as a function name.
+	FunctionScope SymbolScope = "FUNCTION"
 )
 
 // Symbol describes a named binding tracked by the compiler.
@@ -101,5 +103,16 @@ func (st *SymbolTable) defineFree(original Symbol) Symbol {
 	}
 
 	st.store[original.Name] = symbol
+	return symbol
+}
+
+func (st *SymbolTable) DefineFunctionName(name string) Symbol {
+	symbol := Symbol{
+		Name:  name,
+		Scope: FunctionScope,
+		Index: 0,
+	}
+
+	st.store[name] = symbol
 	return symbol
 }
